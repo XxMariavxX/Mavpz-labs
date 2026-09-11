@@ -1,17 +1,17 @@
+%%{init: {'theme': 'neutral'}}%%
 ```erDiagram
     User {
         UUID user_id PK
         VARCHAR(100) username UK
         TEXT email UK
         TEXT password_hash
-        NUMBER like_character_id FK
+        UUID like_character_id FK
         DATE date_registration
         TEXT status  
     }
     Character {
         UUID character_id PK
         VARCHAR(100) name
-        UUID generation_id FK
         VARCHAR(50) pony_type
         TEXT location
         TEXT cutie_mark_description
@@ -24,7 +24,6 @@
         INT release_year
         TEXT description
     }
-
     Product {
         UUID product_id PK
         VARCHAR(100) name
@@ -34,7 +33,6 @@
         INT stock_number
         TEXT description
         VARCHAR(50) sku UK
-        %%артикул товару
         VARCHAR(100) slug UK
     }
     Category {
@@ -67,7 +65,6 @@
         TIMESTAMP published_at
     }
 
-    %% зв'язки
     User }|--o| Character : "selects favorite"
     User ||--o{ Order : "belongs to"
     User ||--o{ Review : "writes"
