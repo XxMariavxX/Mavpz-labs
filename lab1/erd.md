@@ -12,7 +12,6 @@ erDiagram
 
 	Character {
 		UUID character_id PK
-		UUID generation_id FK
 		VARCHAR name
 		VARCHAR pony_type
 		TEXT location
@@ -23,15 +22,15 @@ erDiagram
 
 	Generation {
 		UUID generation_id PK
-		VARCHAR code UK
+		VARCHAR code_name UK
 		INT release_year
 		TEXT description
 	}
 
 	Category {
-		INT category_id PK
+		UUID category_id PK
 		VARCHAR name
-		INT parent_category_id FK
+		UUID parent_category_id FK
 		TEXT description
 		VARCHAR slug UK
 	}
@@ -39,9 +38,9 @@ erDiagram
 	Product {
 		UUID product_id PK
 		VARCHAR name
-		INT category_id FK
+		UUID category_id FK
 		UUID character_id FK
-		DECIMAL price
+		MONEY price
 		INT stock_quantity
 		TEXT description
 		VARCHAR sku UK
@@ -53,7 +52,7 @@ erDiagram
 		UUID user_id FK
 		DATE created_date
 		VARCHAR status
-		DECIMAL total_amount
+		MONEY total_amount
 		VARCHAR order_number UK
 	}
 
@@ -61,11 +60,11 @@ erDiagram
 		UUID order_id PK, FK
 		UUID product_id PK, FK
 		INT quantity
-		DECIMAL price_at_purchase
+		MONEY price_at_purchase
 	}
 
 	Review {
-		INT review_id PK
+		UUID review_id PK
 		UUID user_id FK
 		UUID product_id FK
 		TEXT comment
@@ -77,7 +76,7 @@ erDiagram
 	User ||--o{ Order : places
 	User ||--o{ Review : writes
 
-	Generation ||--o{ Character : contains
+	Generation }|--|{ Character : contains
 	Category o|--o{ Category : contains
 	Category ||--o{ Product : contains
 	Character o|--o{ Product : features
