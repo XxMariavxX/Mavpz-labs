@@ -11,7 +11,7 @@
 
 # ERD (Entity-Relationship Diagram): 
 ```mermaid
-erDiagramф
+erDiagram
 	User {
 		UUID user_id PK
 		VARCHAR username UK
@@ -51,7 +51,6 @@ erDiagramф
 		UUID product_id PK
 		VARCHAR name
 		UUID category_id FK
-		UUID character_id FK
 		MONEY price
 		INT stock_quantity
 		TEXT description
@@ -91,7 +90,7 @@ erDiagramф
 	Generation }|--|{ Character : contains
 	Category o|--o{ Category : contains
 	Category ||--o{ Product : contains
-	Character o|--o{ Product : features
+	Character }|--|{ Product : features
 
 	Product ||--o{ Review : receives
 	Product ||--o{ OrderItem : includes
