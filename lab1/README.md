@@ -11,12 +11,12 @@
 
 # ERD (Entity-Relationship Diagram): 
 ```mermaid
-erDiagram
+erDiagramф
 	User {
 		UUID user_id PK
 		VARCHAR username UK
 		VARCHAR email UK
-		TEXT password_hash
+		VARCHAR password_hash
 		UUID favorite_character_id FK
 		DATE registration_date
 		VARCHAR status
@@ -84,7 +84,7 @@ erDiagram
 		TIMESTAMP published_at
 	}
 	
-  User }|--o| Character : "selects favorite"
+  User }o--o| Character : "selects favorite"
 	User ||--o{ Order : places
 	User ||--o{ Review : writes
 

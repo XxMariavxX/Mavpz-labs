@@ -1,25 +1,24 @@
 # Сутності та їх атрибути:
 
 - **User** :
-   *user_id (`UUID`)- унікальний ідентифікатор користувача;
-   *username (`VARCHAR`)- ім'я користувача;
-   *email (`VARCHAR`)- адреса електронної пошти;
-   *password_hash (`VARCHAR`)- хеш пароль;
-   *favorite_character_id (`UUID`)- ідентифікатор улюбленого персонажа;
-   *registration_date (`DATE`)- дата реєстрації;
-   *status (`VARCHAR`)- статус акаунта(`'active', 'inactive', 'banned'`);
+  * user_id (`UUID`)- унікальний ідентифікатор користувача;
+  * username (`VARCHAR`)- ім'я користувача;
+  * email (`VARCHAR`)- адреса електронної пошти;
+  * password_hash (`VARCHAR`)- хеш пароль;
+  * favorite_character_id (`UUID`)- ідентифікатор улюбленого персонажа;
+  * registration_date (`DATE`)- дата реєстрації;
+  * status (`VARCHAR`)- статус акаунта(`'active', 'inactive', 'banned'`);
 
 - **Character** :
   *  character_id (`UUID`)- унікальний ідентифікатор персонажа;
   *  name (`VARCHAR`)- ім'я персонажа;
-  *  slug (`VARCHAR`)- унікальний ідентифікатор персонажа для URL;
   *  pony_type (`VARCHAR`)- тип поні (`Earth Pony, Pegasus, Unicorn, Alicorn`);
   *  location (`TEXT`)- місце проживання персонажа;
   *  cutie_mark_description (`TEXT`)- опис к'ютімарки;
   *  biography (`TEXT`)- біографія;
   *  slug (`VARCHAR`)- унікальний ідентифікатор персонажа для URL;
 
-- **Generation** `покоління фрнашизи`:
+- **Generation** `покоління франашизи`:
  * generation_id (`UUID`)- унікальний ідентифікатор покоління;
  * code_name (`VARCHAR`)- назва покоління;
  * release_year (`INT`)- рік виходу покоління;
@@ -124,8 +123,7 @@
 
 7. **`Order` <-> `Product` через `OrderItem` (N:M):**
    * Одне замовлення має містити як мінімум 1 позицію `OrderItem` (`1..N`).
-   * Один продукт може фігурувати у 1 або багатьох замовленнях (`1..N`).
-  <!-- на роздуми про зв'язок -->
+   * Один продукт може фігурувати у 0 або багатьох замовленнях (`0..N`).
 
 8. **`User` -> `Review` (1:N):**
    * Користувач може залишити 0 або більше відгуків (`0..N`).
