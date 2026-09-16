@@ -83,7 +83,7 @@
 * **Product:** 
   * PK: `product_id` (*UUIDv7*)
   * UK: `sku` (артикул товару), `slug`
-  * FK: `category_id`(Optional)
+  * FK: `category_id`
 * **Order:** 
   * PK: `order_id` (*UUIDv7*)
   * UK: `order_number`
