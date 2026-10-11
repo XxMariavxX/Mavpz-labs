@@ -109,24 +109,26 @@
 
 # Use Case діаграма
 ```mermaid
-flowchart TD
-    Guest["Guest"]
-    User["User"]
-    Admin["Admin"]
-    PaymentGateway["PaymentGateway"]
+graph TD
+    subgraph Актори
+        Guest[«актор»<br>Guest]
+        User[«актор»<br>User]
+        Admin[«актор»<br>Admin]
+        PaymentGateway[«актор»<br>Payment Gateway]
+    end
 
-    Guest -.->|-- User : inherits
-User <| Admin
+    Guest <|-- User
+    User <|-- Admin
 
-    subgraph Platform["My Little Pony Online Platform"]
-        UC1["Переглянути каталог товарів"]
-        UC2["Фільтрувати товари за персонажем"]
-        UC3["Оформити замовлення"]
-        UC4["Здійснити оплату"]
-        UC5["Залишити відгук"]
-        UC6["Керувати каталогом товарів"]
-        UC_Auth["Авторизуватися в системі"]
-        UC_Stock["Перевірити наявність на складі"]
+    subgraph Platform ["My Little Pony Online Platform"]
+        UC1[Переглянути каталог товарів]
+        UC2[Фільтрувати товари за персонажем]
+        UC3[Оформити замовлення]
+        UC4[Здійснити оплату]
+        UC5[Залишити відгук]
+        UC6[Керувати каталогом товарів]
+        UC_Auth[Авторизуватися в системі]
+        UC_Stock[Перевірити наявність на складі]
     end
 
     Guest --> UC1
@@ -138,11 +140,11 @@ User <| Admin
     Admin --> UC6
     PaymentGateway --> UC4
 
-    UC3 -.->|include| UC_Auth
-    UC3 -.->|include| UC_Stock
-    UC3 -.->|include| UC4
-    UC4 -.->|include| UC_Auth
-
-    UC5 -.->|include| UC_Auth
-    UC2 -.->|extend| UC1
+    UC3 -.->|"&lt;&lt;include&gt;&gt;"| UC_Auth
+    UC3 -.->|"&lt;&lt;include&gt;&gt;"| UC_Stock
+    UC3 -.->|"&lt;&lt;include&gt;&gt;"| UC4
+    UC4 -.->|"&lt;&lt;include&gt;&gt;"| UC_Auth
+    UC5 -.->|"&lt;&lt;include&gt;&gt;"| UC_Auth
+    
+    UC2 -.->|"&lt;&lt;extend&gt;&gt;"| UC1
 ```
