@@ -110,17 +110,17 @@
 # Use Case діаграма
 ```mermaid
 graph TD
-    subgraph Актори
-        Guest[«актор»<br>Guest]
-        User[«актор»<br>User]
-        Admin[«актор»<br>Admin]
-        PaymentGateway[«актор»<br>Payment Gateway]
+    subgraph Actors
+        Guest[Guest]
+        User[User]
+        Admin[Admin]
+        PaymentGateway[Payment Gateway]
     end
 
-    Guest <|-- User
-    User <|-- Admin
+    User --> Guest
+    Admin --> User
 
-    subgraph Platform ["My Little Pony Online Platform"]
+    subgraph Platform [My Little Pony Online Platform]
         UC1[Переглянути каталог товарів]
         UC2[Фільтрувати товари за персонажем]
         UC3[Оформити замовлення]
@@ -140,11 +140,11 @@ graph TD
     Admin --> UC6
     PaymentGateway --> UC4
 
-    UC3 -.->|"&lt;&lt;include&gt;&gt;"| UC_Auth
-    UC3 -.->|"&lt;&lt;include&gt;&gt;"| UC_Stock
-    UC3 -.->|"&lt;&lt;include&gt;&gt;"| UC4
-    UC4 -.->|"&lt;&lt;include&gt;&gt;"| UC_Auth
-    UC5 -.->|"&lt;&lt;include&gt;&gt;"| UC_Auth
+    UC3 -.->|&lt;&lt;include&gt;&gt;| UC_Auth
+    UC3 -.->|&lt;&lt;include&gt;&gt;| UC_Stock
+    UC3 -.->|&lt;&lt;include&gt;&gt;| UC4
+    UC4 -.->|&lt;&lt;include&gt;&gt;| UC_Auth
+    UC5 -.->|&lt;&lt;include&gt;&gt;| UC_Auth
     
-    UC2 -.->|"&lt;&lt;extend&gt;&gt;"| UC1
+    UC2 -.->|&lt;&lt;extend&gt;&gt;| UC1
 ```
