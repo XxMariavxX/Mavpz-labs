@@ -140,11 +140,11 @@ graph TD
     Admin --> UC6
     PaymentGateway --> UC4
 
-    UC3 -.->|&lt;&lt;include&gt;&gt;| UC_Auth
-    UC3 -.->|&lt;&lt;include&gt;&gt;| UC_Stock
-    UC3 -.->|&lt;&lt;include&gt;&gt;| UC4
-    UC4 -.->|&lt;&lt;include&gt;&gt;| UC_Auth
-    UC5 -.->|&lt;&lt;include&gt;&gt;| UC_Auth
+    UC3 -.->|«include»| UC_Auth
+    UC3 -.->|«include»| UC_Stock
+    UC3 -.->|«include»| UC4
+    UC4 -.->|«include»| UC_Auth
+    UC5 -.->|«include»| UC_Auth
     
-    UC2 -.->|&lt;&lt;extend&gt;&gt;| UC1
+    UC2 -.->|«extend»| UC1
 ```
