@@ -149,7 +149,7 @@
   * **І** блокує користувачеві можливість оформлювати нові замовлення чи залишати відгуки
 
 # Use Case діаграма
-```mermaid
+```
 graph LR
     subgraph Actors [Актори платформи]
         Guest[Guest]
@@ -157,10 +157,6 @@ graph LR
         Admin[Admin]
         PaymentGateway[Payment Gateway]
     end
-
-    %% Узагальнення (наслідування)
-    Guest <|-- User
-    User <|-- Admin
 
     subgraph Platform [My Little Pony Online Platform]
         UC1[Переглянути каталог товарів]
@@ -173,7 +169,6 @@ graph LR
         UC_Stock[Перевірити наявність на складі]
     end
 
-    %% Права акторів
     Guest --> UC1
     Guest --> UC2
 
@@ -183,10 +178,10 @@ graph LR
     Admin --> UC6
     PaymentGateway --> UC4
 
-    %% Include та Extend зв'язки
     UC3 -.->|«include»| UC_Auth
     UC3 -.->|«include»| UC_Stock
-    UC3 -.->|«include»| UC4
+    UC3 -.->|«include»| UC_Auth
+    UC4 -.->|«include»| UC_Auth
     UC5 -.->|«include»| UC_Auth
     
     UC2 -.->|«extend»| UC1
