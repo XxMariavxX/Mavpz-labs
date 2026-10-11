@@ -106,3 +106,43 @@
     Коли адміністратор змінює статус акаунта на `'banned'`
     Тоді система оновлює статус у таблиці `User`
     І блокує користувачеві можливість оформлювати нові замовлення чи залишати відгуки
+
+# Use Case діаграма
+```mermaid
+flowchart TD
+    Guest["Guest"]
+    User["User"]
+    Admin["Admin"]
+    PaymentGateway["PaymentGateway"]
+
+    Guest -.->|-- User : inherits
+User <| Admin
+
+    subgraph Platform["My Little Pony Online Platform"]
+        UC1["Переглянути каталог товарів"]
+        UC2["Фільтрувати товари за персонажем"]
+        UC3["Оформити замовлення"]
+        UC4["Здійснити оплату"]
+        UC5["Залишити відгук"]
+        UC6["Керувати каталогом товарів"]
+        UC_Auth["Авторизуватися в системі"]
+        UC_Stock["Перевірити наявність на складі"]
+    end
+
+    Guest --> UC1
+    Guest --> UC2
+
+    User --> UC3
+    User --> UC5
+
+    Admin --> UC6
+    PaymentGateway --> UC4
+
+    UC3 -.->|include| UC_Auth
+    UC3 -.->|include| UC_Stock
+    UC3 -.->|include| UC4
+    UC4 -.->|include| UC_Auth
+
+    UC5 -.->|include| UC_Auth
+    UC2 -.->|extend| UC1
+```
