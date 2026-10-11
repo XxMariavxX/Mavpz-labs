@@ -169,15 +169,21 @@ graph LR
         UC_Stock[Перевірити наявність на складі]
     end
 
+    %% Гість має доступ до каталогу та фільтрів
     Guest --> UC1
     Guest --> UC2
 
+    %% Покупець успадковує можливості гостя + свої унікальні дії (каталог, фільтри, замовлення, відгуки)
+    User --> UC1
+    User --> UC2
     User --> UC3
     User --> UC5
 
+    %% Адміністратор та платіжний шлюз
     Admin --> UC6
     PaymentGateway --> UC4
 
+    %% Включення (include) та розширення (extend)
     UC3 -.->|«include»| UC_Auth
     UC3 -.->|«include»| UC_Stock
     UC3 -.->|«include»| UC_Auth
