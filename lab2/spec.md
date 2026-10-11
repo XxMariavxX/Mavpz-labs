@@ -150,13 +150,16 @@
 
 # Use Case діаграма
 ```mermaid
-graph LR
-    subgraph Actors [Актори платформи]
+graph TD
+    subgraph Actors [Actors]
         Guest[Guest]
         User[User]
         Admin[Admin]
         PaymentGateway[Payment Gateway]
     end
+
+    Admin --> User
+    User --> Guest
 
     subgraph Platform [My Little Pony Online Platform]
         UC1[Переглянути каталог товарів]
@@ -169,24 +172,18 @@ graph LR
         UC_Stock[Перевірити наявність на складі]
     end
 
-    %% Гість має доступ до каталогу та фільтрів
     Guest --> UC1
     Guest --> UC2
 
-    %% Покупець успадковує можливості гостя + свої унікальні дії (каталог, фільтри, замовлення, відгуки)
-    User --> UC1
-    User --> UC2
     User --> UC3
     User --> UC5
 
-    %% Адміністратор та платіжний шлюз
     Admin --> UC6
     PaymentGateway --> UC4
 
-    %% Включення (include) та розширення (extend)
     UC3 -.->|«include»| UC_Auth
     UC3 -.->|«include»| UC_Stock
-    UC3 -.->|«include»| UC_Auth
+    UC3 -.->|«include»| UC4
     UC4 -.->|«include»| UC_Auth
     UC5 -.->|«include»| UC_Auth
     
