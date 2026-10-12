@@ -161,7 +161,7 @@ graph TD
     Admin --> User
     User --> Guest
 
-    subgraph Platform [My Little Pony Online Platform]
+    subgraph Platform [My Little Pony]
         UC1[Переглянути каталог товарів]
         UC2[Фільтрувати товари за персонажем]
         UC3[Оформити замовлення]
