@@ -149,41 +149,39 @@
   * **І** блокує користувачеві можливість оформлювати нові замовлення чи залишати відгуки
 
 # Use Case діаграма
-```mermaid
-graph LR
+flowchart LR
     classDef actor fill:#e1f5fe,stroke:#0288d1,stroke-width:1.5px;
     classDef usecase fill:#fff8e1,stroke:#f57c00,stroke-width:1.5px;
 
-    subgraph UsersGroup ["Актори-користувачі"]
-        direction TB
-        Guest["Гість (Guest)"]:::actor
-        User["Користувач (User)"]:::actor
-        Admin["Адміністратор (Admin)"]:::actor
+    subgraph UsersGroup [Користувачі]
+        Guest[Гість Guest]:::actor
+        User[Користувач User]:::actor
+        Admin[Адміністратор Admin]:::actor
     end
 
     Admin --> User
     User --> Guest
 
-    subgraph Platform ["Платформа My Little Pony Online"]
-        UC1(["UC-1: Переглянути каталог"]):::usecase
-        UC2(["UC-2: Переглянути персонажів"]):::usecase
-        UC_Filter(["UC-Filter: Фільтрувати мерч"]):::usecase
+    subgraph Platform [Платформа My Little Pony Online]
+        UC1([UC-1: Переглянути каталог]):::usecase
+        UC2([UC-2: Переглянути персонажів]):::usecase
+        UC_Filter([UC-Filter: Фільтрувати мерч]):::usecase
 
-        UC4(["UC-4: Налаштувати улюбленого поні"]):::usecase
-        UC7(["UC-7: Залишити відгук"]):::usecase
-        UC3(["UC-3: Керувати кошиком"]):::usecase
-        UC5(["UC-5: Оформити замовлення"]):::usecase
+        UC4([UC-4: Налаштувати улюбленого поні]):::usecase
+        UC7([UC-7: Залишити відгук]):::usecase
+        UC3([UC-3: Керувати кошиком]):::usecase
+        UC5([UC-5: Оформити замовлення]):::usecase
 
-        UC8(["UC-8: Керувати каталогом"]):::usecase
-        UC9(["UC-9: Керувати акаунтами"]):::usecase
+        UC8([UC-8: Керувати каталогом]):::usecase
+        UC9([UC-9: Керувати акаунтами]):::usecase
 
-        UC_Auth(["UC-Auth: Автентифікуватися"]):::usecase
-        UC_Stock(["UC-Stock: Перевірити залишки"]):::usecase
-        UC6(["UC-6: Здійснити оплату"]):::usecase
+        UC_Auth([UC-Auth: Автентифікуватися]):::usecase
+        UC_Stock([UC-Stock: Перевірити залишки]):::usecase
+        UC6([UC-6: Здійснити оплату]):::usecase
     end
 
-    subgraph External ["Зовнішній сервіс"]
-        PaymentGateway["Платіжний шлюз"]:::actor
+    subgraph External [Зовнішній сервіс]
+        PaymentGateway[Платіжний шлюз]:::actor
     end
 
     Guest --> UC1
@@ -197,6 +195,8 @@ graph LR
     Admin --> UC8
     Admin --> UC9
 
+    PaymentGateway --> UC6
+
     UC_Filter -.->|extend| UC1
 
     UC4 -.->|include| UC_Auth
@@ -206,8 +206,5 @@ graph LR
     UC5 -.->|include| UC_Auth
     UC5 -.->|include| UC_Stock
     UC5 -.->|include| UC6
-
-    UC6 <-- PaymentGateway
-```
 
 # Матриця трасування вимог до сценаріїв користувача
