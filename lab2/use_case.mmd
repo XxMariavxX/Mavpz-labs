@@ -5,10 +5,10 @@ flowchart LR
     Admin[Адміністратор Admin]
     PG[Платіжний шлюз]
 
-    User -.->|має можливості гостя| Guest
-    Admin -.->|має можливості користувача| User
+    User -.->|наслідує| Guest
+    Admin -.->|наслідує| User
 
-    subgraph Platform[Платформа My Little Pony Online]
+    subgraph Platform[My Little Pony Online]
         UC1((UC-1: Переглянути каталог))
         UC2((UC-2: Переглянути персонажів))
         UCF((UC-Filter: Фільтрувати мерч))
