@@ -256,56 +256,46 @@ _5. Optional Features (Опціональні функції)_
 
 Діаграма: [use_case.puml](use_case.puml) (PlantUML).
 
-```plantuml
-@startuml
+```mermaid
+flowchart LR
+    Guest[Гість Guest]
+    User[Користувач User]
+    Admin[Адміністратор Admin]
+    PG[Платіжний шлюз]
 
-left to right direction
+    User -.->|наслідує| Guest
+    Admin -.->|наслідує| User
 
-actor "Гість (Guest)" as Guest
-actor "Користувач (User)" as User
-actor "Адміністратор (Admin)" as Admin
-actor "Платіжний шлюз" as PG
+    subgraph Platform[Платформа My Little Pony Online]
+        UC1((UC-1: Переглянути каталог))
+        UC2((UC-2: Переглянути персонажів))
+        UCF((UC-Filter: Фільтрувати мерч))
+        UCA((UC-Auth: Автентифікуватися))
+        UC4((UC-4: Налаштувати улюбленого поні))
+        UC7((UC-7: Залишити відгук))
+        UC3((UC-3: Керувати кошиком))
+        UC5((UC-5: Оформити замовлення))
+        UCS((UC-Stock: Перевірити залишки))
+        UC6((UC-6: Обробити підтвердження оплати))
+        UC8((UC-8: Керувати каталогом))
+        UC9((UC-9: Керувати акаунтами))
+    end
 
-' Генералізація акторів: нащадок має доступ до всього, що й предок
-User -|> Guest
-Admin -|> User
+    Guest --> UC1
+    Guest --> UC2
+    Guest --> UCA
+    User --> UC4
+    User --> UC7
+    User --> UC3
+    User --> UC5
+    Admin --> UC8
+    Admin --> UC9
+    PG --> UC6
 
-rectangle "Платформа My Little Pony Online" {
-  usecase "UC-1: Переглянути каталог" as UC1
-  usecase "UC-2: Переглянути персонажів" as UC2
-  usecase "UC-Filter: Фільтрувати мерч" as UCF
-  usecase "UC-Auth: Автентифікуватися" as UCA
-  usecase "UC-4: Налаштувати улюбленого поні" as UC4
-  usecase "UC-7: Залишити відгук" as UC7
-  usecase "UC-3: Керувати кошиком" as UC3
-  usecase "UC-5: Оформити замовлення" as UC5
-  usecase "UC-Stock: Перевірити залишки" as UCS
-  usecase "UC-6: Обробити підтвердження оплати" as UC6
-  usecase "UC-8: Керувати каталогом" as UC8
-  usecase "UC-9: Керувати акаунтами" as UC9
-}
-
-Guest --> UC1
-Guest --> UC2
-Guest --> UCA
-User --> UC4
-User --> UC7
-User --> UC3
-User --> UC5
-Admin --> UC8
-Admin --> UC9
-PG --> UC6
-
-' extend: сценарій-розширення вказує на базовий
-UCF ..> UC1 : <<extend>>
-
-' include: лише невід'ємні кроки процесу.
-' Автентифікація є передумовою (див. spec.md), тому не малюється як include.
-UC3 ..> UCS : <<include>>
-UC5 ..> UCS : <<include>>
-UC5 ..> UC6 : <<include>>
-
-@enduml
+    UCF -.->|extend| UC1
+    UC3 -.->|include| UCS
+    UC5 -.->|include| UCS
+    UC5 -.->|include| UC6
 ```
 
 # Матриця трасування вимог до сценаріїв користувача
