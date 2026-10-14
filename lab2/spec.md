@@ -257,7 +257,7 @@ _5. Optional Features (Опціональні функції)_
 Діаграма: [use_case.mmd](use_case.mmd) (Mermaid).
 
 ```mermaid
-flowchart TB
+flowchart LR
     Guest[Гість Guest]
     User[Користувач User]
     Admin[Адміністратор Admin]
@@ -266,7 +266,7 @@ flowchart TB
     User -.->|має можливості гостя| Guest
     Admin -.->|має можливості користувача| User
 
-    subgraph Platform[ ]
+    subgraph Platform[Платформа My Little Pony Online]
         UC1((UC-1: Переглянути каталог))
         UC2((UC-2: Переглянути персонажів))
         UCF((UC-Filter: Фільтрувати мерч))
@@ -279,9 +279,6 @@ flowchart TB
         UC6((UC-6: Обробити підтвердження оплати))
         UC8((UC-8: Керувати каталогом))
         UC9((UC-9: Керувати акаунтами))
-        PlatformTitle[Платформа My Little Pony Online]
-        UC8 ~~~ PlatformTitle
-        UC9 ~~~ PlatformTitle
     end
 
     Guest --> UC1
