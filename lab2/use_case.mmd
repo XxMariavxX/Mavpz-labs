@@ -1,25 +1,29 @@
+%%{init: {'theme': 'neutral', 'themeVariables': { 'background': '#ffffff', 'mainBkg': '#ffffff' }}}%%
 flowchart LR
-    Guest[Гість Guest]
-    User[Користувач User]
-    Admin[Адміністратор Admin]
-    PG[Платіжний шлюз]
+    classDef actor fill:#e1f5fe,stroke:#0288d1,stroke-width:1.5px,color:#000000;
+    classDef usecase fill:#fff8e1,stroke:#f57c00,stroke-width:1.5px,color:#000000;
+
+    Guest[Гість Guest]:::actor
+    User[Користувач User]:::actor
+    Admin[Адміністратор Admin]:::actor
+    PG[Платіжний шлюз]:::actor
 
     User -.->|наслідує| Guest
     Admin -.->|наслідує| User
 
-    subgraph Platform[My Little Pony Online]
-        UC1((UC-1: Переглянути каталог))
-        UC2((UC-2: Переглянути персонажів))
-        UCF((UC-Filter: Фільтрувати мерч))
-        UCA((UC-Auth: Автентифікуватися))
-        UC4((UC-4: Налаштувати улюбленого поні))
-        UC7((UC-7: Залишити відгук))
-        UC3((UC-3: Керувати кошиком))
-        UC5((UC-5: Оформити замовлення))
-        UCS((UC-Stock: Перевірити залишки))
-        UC6((UC-6: Обробити підтвердження оплати))
-        UC8((UC-8: Керувати каталогом))
-        UC9((UC-9: Керувати акаунтами))
+    subgraph Platform [My Little Pony Online]
+        UC1((UC-1: Переглянути каталог)):::usecase
+        UC2((UC-2: Переглянути персонажів)):::usecase
+        UCF((UC-Filter: Фільтрувати мерч)):::usecase
+        UCA((UC-Auth: Автентифікуватися)):::usecase
+        UC4((UC-4: Налаштувати улюбленого поні)):::usecase
+        UC7((UC-7: Залишити відгук)):::usecase
+        UC3((UC-3: Керувати кошиком)):::usecase
+        UC5((UC-5: Оформити замовлення)):::usecase
+        UCS((UC-Stock: Перевірити залишки)):::usecase
+        UC6((UC-6: Обробити підтвердження оплати)):::usecase
+        UC8((UC-8: Керувати каталогом)):::usecase
+        UC9((UC-9: Керувати акаунтами)):::usecase
     end
 
     Guest --> UC1
@@ -37,3 +41,5 @@ flowchart LR
     UC3 -.->|include| UCS
     UC5 -.->|include| UCS
     UC5 -.->|include| UC6
+
+    style Platform fill:#fffde7,stroke:#ffe082,stroke-width:1.5px,color:#000000
