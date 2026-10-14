@@ -1,4 +1,4 @@
-# Для платформи My Little Pony Online визначено такі типи акторів:
+﻿# Для платформи My Little Pony Online визначено такі типи акторів:
 
 # Опис акторів системи та зовнішніх сервісів
 
@@ -254,60 +254,58 @@ _5. Optional Features (Опціональні функції)_
 
 # Use Case діаграма
 
-```mermaid
-flowchart LR
-	classDef actor fill:#e1f5fe,stroke:#0288d1,stroke-width:1.5px;
-	classDef usecase fill:#fff8e1,stroke:#f57c00,stroke-width:1.5px;
+Діаграма: [use_case.puml](use_case.puml) (PlantUML).
 
-	subgraph UsersGroup [Користувачі]
-		Guest[Гість Guest]:::actor
-		User[Користувач User]:::actor
-		Admin[Адміністратор Admin]:::actor
-	end
+```plantuml
+@startuml
 
-	Admin -->|наслідує| User
-	User -->|наслідує| Guest
+left to right direction
 
-	subgraph Platform [Платформа My Little Pony Online]
-		UC1([UC-1: Переглянути каталог]):::usecase
-		UC2([UC-2: Переглянути персонажів]):::usecase
-		UC_Filter([UC-Filter: Фільтрувати мерч]):::usecase
-		UC4([UC-4: Налаштувати улюбленого поні]):::usecase
-		UC7([UC-7: Залишити відгук]):::usecase
-		UC3([UC-3: Керувати кошиком]):::usecase
-		UC5([UC-5: Оформити замовлення]):::usecase
-		UC8([UC-8: Керувати каталогом]):::usecase
-		UC9([UC-9: Керувати акаунтами]):::usecase
-		UC_Auth([UC-Auth: Автентифікуватися]):::usecase
-		UC_Stock([UC-Stock: Перевірити залишки]):::usecase
-		UC6([UC-6: Здійснити оплату]):::usecase
-	end
+actor "Гість (Guest)" as Guest
+actor "Користувач (User)" as User
+actor "Адміністратор (Admin)" as Admin
+actor "Платіжний шлюз" as PG
 
-	subgraph External [Зовнішній сервіс]
-		PaymentGateway[Платіжний шлюз]:::actor
-	end
+' Генералізація акторів: нащадок має доступ до всього, що й предок
+User -|> Guest
+Admin -|> User
 
-	Guest --> UC1
-	Guest --> UC2
-	User --> UC4
-	User --> UC7
-	User --> UC3
-	User --> UC5
-	Admin --> UC8
-	Admin --> UC9
-	PaymentGateway --> UC6
+rectangle "Платформа My Little Pony Online" {
+  usecase "UC-1: Переглянути каталог" as UC1
+  usecase "UC-2: Переглянути персонажів" as UC2
+  usecase "UC-Filter: Фільтрувати мерч" as UCF
+  usecase "UC-Auth: Автентифікуватися" as UCA
+  usecase "UC-4: Налаштувати улюбленого поні" as UC4
+  usecase "UC-7: Залишити відгук" as UC7
+  usecase "UC-3: Керувати кошиком" as UC3
+  usecase "UC-5: Оформити замовлення" as UC5
+  usecase "UC-Stock: Перевірити залишки" as UCS
+  usecase "UC-6: Обробити підтвердження оплати" as UC6
+  usecase "UC-8: Керувати каталогом" as UC8
+  usecase "UC-9: Керувати акаунтами" as UC9
+}
 
-	UC_Filter -.->|extend| UC1
+Guest --> UC1
+Guest --> UC2
+Guest --> UCA
+User --> UC4
+User --> UC7
+User --> UC3
+User --> UC5
+Admin --> UC8
+Admin --> UC9
+PG --> UC6
 
-	UC4 -.->|include| UC_Auth
-	UC7 -.->|include| UC_Auth
-	UC3 -.->|include| UC_Auth
-	UC3 -.->|include| UC_Stock
-	UC5 -.->|include| UC_Auth
-	UC5 -.->|include| UC_Stock
-	UC5 -.->|include| UC6
-	UC8 -.->|include| UC_Auth
-	UC9 -.->|include| UC_Auth
+' extend: сценарій-розширення вказує на базовий
+UCF ..> UC1 : <<extend>>
+
+' include: лише невід'ємні кроки процесу.
+' Автентифікація є передумовою (див. spec.md), тому не малюється як include.
+UC3 ..> UCS : <<include>>
+UC5 ..> UCS : <<include>>
+UC5 ..> UC6 : <<include>>
+
+@enduml
 ```
 
 # Матриця трасування вимог до сценаріїв користувача
