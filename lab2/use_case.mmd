@@ -8,8 +8,8 @@ flowchart LR
 		Admin[Адміністратор Admin]:::actor
 	end
 
-	Admin --> User
-	User --> Guest
+	Admin -->|наслідує| User
+	User -->|наслідує| Guest
 
 	subgraph Platform [Платформа My Little Pony Online]
 		UC1([UC-1: Переглянути каталог]):::usecase
@@ -39,10 +39,15 @@ flowchart LR
 	Admin --> UC8
 	Admin --> UC9
 	PaymentGateway --> UC6
+
 	UC_Filter -.->|extend| UC1
+
 	UC4 -.->|include| UC_Auth
 	UC7 -.->|include| UC_Auth
+	UC3 -.->|include| UC_Auth
 	UC3 -.->|include| UC_Stock
 	UC5 -.->|include| UC_Auth
 	UC5 -.->|include| UC_Stock
 	UC5 -.->|include| UC6
+	UC8 -.->|include| UC_Auth
+	UC9 -.->|include| UC_Auth
