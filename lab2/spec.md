@@ -254,17 +254,17 @@ _5. Optional Features (Опціональні функції)_
 
 # Use Case діаграма
 
-Діаграма: [use_case.puml](use_case.puml) (PlantUML).
+Діаграма: [use_case.mmd](use_case.mmd) (Mermaid).
 
 ```mermaid
-flowchart LR
+flowchart TB
     Guest[Гість Guest]
     User[Користувач User]
     Admin[Адміністратор Admin]
     PG[Платіжний шлюз]
 
-    User -.->|наслідує| Guest
-    Admin -.->|наслідує| User
+    User -.->|має можливості гостя| Guest
+    Admin -.->|має можливості користувача| User
 
     subgraph Platform[Платформа My Little Pony Online]
         UC1((UC-1: Переглянути каталог))
