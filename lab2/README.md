@@ -32,6 +32,7 @@ flowchart LR
 
 	subgraph Platform[My Little Pony Online]
 		UC1((UC-1: Переглянути каталог))
+		UCP((UC-Product: Переглянути сторінку товару))
 		UC2((UC-2: Переглянути персонажів))
 		UCF((UC-Filter: Фільтрувати мерч))
 		UCA((UC-Auth: Автентифікуватися))
@@ -46,6 +47,7 @@ flowchart LR
 	end
 
 	Guest --> UC1
+	Guest --> UCP
 	Guest --> UC2
 	Guest --> UCA
 	User --> UC4
@@ -57,6 +59,8 @@ flowchart LR
 	PG --> UC6
 
 	UCF -.->|extend| UC1
+	UCP -.->|extend| UC1
+	UC3 -.->|extend| UCA
 	UC3 -.->|include| UCS
 	UC5 -.->|include| UCS
 	UC5 -.->|include| UC6
