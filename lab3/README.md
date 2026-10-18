@@ -1,0 +1,82 @@
+## Sequence diagram
+
+```mermaid
+%%{init: {'theme': 'neutral', 'themeVariables': { 'background': '#ffffff' }}}%%
+sequenceDiagram
+	autonumber
+	actor User
+	participant UI
+	participant OrderService
+	participant InventoryService
+	participant PaymentService
+	actor PG as PaymentGateway
+	participant Storage
+
+	User->>UI: submitCheckout(cartItems)
+
+	opt Already processing (REQ-SD-1)
+		UI-->>User: error("Payment already processing")
+	end
+
+	UI->>OrderService: createOrder(userId, cartItems)
+
+	loop Each cart item
+		OrderService->>InventoryService: checkAndReserveStock(productId, quantity)
+		InventoryService->>Storage: getStock(productId)
+		Storage-->>InventoryService: stock_quantity
+
+		alt Out of stock (REQ-UW-1, REQ-UW-6)
+			InventoryService-->>OrderService: error(InsufficientStock)
+			OrderService->>InventoryService: cancelCartHolds(cartItems)
+			OrderService-->>UI: displayStockError()
+			UI-->>User: error("Out of stock")
+		else Stock is available
+			InventoryService->>Storage: createHold(productId, quantity, timeout=30m)
+			Storage-->>InventoryService: holdAck
+			InventoryService-->>OrderService: stockHoldSuccess
+		end
+	end
+
+	OrderService->>Storage: insertOrder(userId, items, totalAmount, status='created')
+	Storage-->>OrderService: orderId
+
+	OrderService->>PaymentService: initiatePayment(orderId, totalAmount)
+	PaymentService->>PG: createPaymentSession(orderId, totalAmount, returnUrl)
+	PG-->>PaymentService: sessionCreated(paymentUrl, transactionId)
+	PaymentService-->>OrderService: paymentUrl
+
+	OrderService-->>UI: redirectToPayment(paymentUrl)
+	UI-->>User: redirect(paymentUrl)
+
+	alt Payment via Gateway Webhook
+		User->>PG: submitPaymentDetails()
+		PG->>PaymentService: postWebhook(transactionId, orderId, status)
+
+		alt status == 'SUCCESS' (REQ-ED-2)
+			PaymentService->>OrderService: confirmPayment(orderId)
+			OrderService->>Storage: updateOrderStatus(orderId, status='paid')
+			OrderService->>InventoryService: commitStockDeduction(orderId)
+			InventoryService->>Storage: finalizeStockDeduction(orderId)
+			PaymentService-->>PG: 200 OK
+			PaymentService->>UI: notifyPaymentSuccess(orderId)
+			UI-->>User: displaySuccess("Order paid")
+
+		else status == 'FAILED' (REQ-UW-2)
+			PaymentService->>OrderService: handlePaymentFailure(orderId)
+			OrderService->>Storage: updateOrderStatus(orderId, status='cancelled')
+			OrderService->>InventoryService: releaseStockReservation(orderId)
+			InventoryService->>Storage: deleteHold(orderId)
+			PaymentService-->>PG: 200 OK
+			PaymentService->>UI: notifyPaymentFailed(orderId)
+			UI-->>User: displayError("Payment failed. Try again")
+		end
+
+	else Timeout 30 min expired (REQ-SD-3, REQ-UW-7)
+		Note over OrderService,InventoryService: Background worker (TTL = 30m)
+		OrderService->>Storage: updateOrderStatus(orderId, status='cancelled')
+		OrderService->>InventoryService: releaseStockReservation(orderId)
+		InventoryService->>Storage: expireHold(orderId)
+		OrderService->>UI: notifySessionTimeout(orderId)
+		UI-->>User: displayError("Checkout expired. Reservation released")
+	end
+```
