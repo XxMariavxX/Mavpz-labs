@@ -1,5 +1,3 @@
-```mermaid
-%%{init: {'theme': 'neutral', 'themeVariables': { 'background': '#ffffff' }}}%%
 sequenceDiagram
     autonumber
     actor User
@@ -10,114 +8,70 @@ sequenceDiagram
     actor PG as PaymentGateway
     participant Storage
 
-    %% 1. Checkout & Double-click guard
     User->>UI: submitCheckout(cartItems)
-    activate UI
-    
+
     opt Already processing (REQ-SD-1)
         UI-->>User: error("Payment already processing")
     end
 
     UI->>OrderService: createOrder(userId, cartItems)
-    activate OrderService
 
-    %% 2. Stock check loop
     loop Each cart item
         OrderService->>InventoryService: checkAndReserveStock(productId, quantity)
-        activate InventoryService
         InventoryService->>Storage: getStock(productId)
         Storage-->>InventoryService: stock_quantity
         
-        break Out of stock (REQ-UW-1, REQ-UW-6)
+        alt Out of stock (REQ-UW-1, REQ-UW-6)
             InventoryService-->>OrderService: error(InsufficientStock)
             OrderService->>InventoryService: cancelCartHolds(cartItems)
             OrderService-->>UI: displayStockError()
             UI-->>User: error("Out of stock")
+        else Stock is available
+            InventoryService->>Storage: createHold(productId, quantity, timeout=30m)
+            Storage-->>InventoryService: holdAck
+            InventoryService-->>OrderService: stockHoldSuccess
         end
-
-        InventoryService->>Storage: createHold(productId, quantity, timeout=30m)
-        Storage-->>InventoryService: holdAck
-        InventoryService-->>OrderService: stockHoldSuccess
-        deactivate InventoryService
     end
 
-    %% 3. Order creation
     OrderService->>Storage: insertOrder(userId, items, totalAmount, status='created')
     Storage-->>OrderService: orderId
 
-    %% 4. Payment initiation
     OrderService->>PaymentService: initiatePayment(orderId, totalAmount)
-    activate PaymentService
     PaymentService->>PG: createPaymentSession(orderId, totalAmount, returnUrl)
-    activate PG
     PG-->>PaymentService: sessionCreated(paymentUrl, transactionId)
-    deactivate PG
     PaymentService-->>OrderService: paymentUrl
-    deactivate PaymentService
 
     OrderService-->>UI: redirectToPayment(paymentUrl)
-    deactivate OrderService
     UI-->>User: redirect(paymentUrl)
-    deactivate UI
 
-    %% 5. Payment execution & Webhook
     alt Payment via Gateway Webhook
         User->>PG: submitPaymentDetails()
-        activate PG
         PG->>PaymentService: postWebhook(transactionId, orderId, status)
-        deactivate PG
-        activate PaymentService
 
         alt status == 'SUCCESS' (REQ-ED-2)
             PaymentService->>OrderService: confirmPayment(orderId)
-            activate OrderService
             OrderService->>Storage: updateOrderStatus(orderId, status='paid')
             OrderService->>InventoryService: commitStockDeduction(orderId)
-            activate InventoryService
             InventoryService->>Storage: finalizeStockDeduction(orderId)
-            Storage-->>InventoryService: stockDeducted
-            InventoryService-->>OrderService: stockCommitted
-            deactivate InventoryService
-            OrderService-->>PaymentService: ack
-            deactivate OrderService
             PaymentService-->>PG: 200 OK
             PaymentService->>UI: notifyPaymentSuccess(orderId)
-            activate UI
             UI-->>User: displaySuccess("Order paid")
-            deactivate UI
 
         else status == 'FAILED' (REQ-UW-2)
             PaymentService->>OrderService: handlePaymentFailure(orderId)
-            activate OrderService
             OrderService->>Storage: updateOrderStatus(orderId, status='cancelled')
             OrderService->>InventoryService: releaseStockReservation(orderId)
-            activate InventoryService
             InventoryService->>Storage: deleteHold(orderId)
-            Storage-->>InventoryService: holdDeleted
-            InventoryService-->>OrderService: stockRestored
-            deactivate InventoryService
-            OrderService-->>PaymentService: ack
-            deactivate OrderService
             PaymentService-->>PG: 200 OK
             PaymentService->>UI: notifyPaymentFailed(orderId)
-            activate UI
             UI-->>User: displayError("Payment failed. Try again")
-            deactivate UI
         end
-        deactivate PaymentService
 
     else Timeout 30 min expired (REQ-SD-3, REQ-UW-7)
         Note over OrderService,InventoryService: Background worker (TTL = 30m)
         OrderService->>Storage: updateOrderStatus(orderId, status='cancelled')
         OrderService->>InventoryService: releaseStockReservation(orderId)
-        activate InventoryService
         InventoryService->>Storage: expireHold(orderId)
-        Storage-->>InventoryService: holdExpired
-        InventoryService-->>OrderService: stockRestored
-        deactivate InventoryService
         OrderService->>UI: notifySessionTimeout(orderId)
-        activate UI
         UI-->>User: displayError("Checkout expired. Reservation released")
-        deactivate UI
     end
-```
