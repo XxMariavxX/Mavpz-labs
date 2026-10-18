@@ -55,7 +55,7 @@
 ```
 
 ## Sequence-діаграма
-```
+%%{init: {'theme': 'neutral', 'themeVariables': { 'background': '#ffffff' }}}%%
 sequenceDiagram
     autonumber
     actor User
@@ -133,4 +133,3 @@ sequenceDiagram
         OrderService->>UI: notifySessionTimeout(orderId)
         UI-->>User: displayError("Checkout expired. Reservation released")
     end
-```
