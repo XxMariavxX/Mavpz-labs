@@ -1,5 +1,4 @@
-## Sequence diagram
-
+## Sequence діаграма
 ```mermaid
 %%{init: {'theme': 'neutral', 'themeVariables': { 'background': '#ffffff' }}}%%
 sequenceDiagram
