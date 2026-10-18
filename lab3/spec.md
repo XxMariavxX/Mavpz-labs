@@ -55,7 +55,7 @@
 ```
 
 ## Sequence-діаграма
-
+```
 sequenceDiagram
     autonumber
     actor User
@@ -133,3 +133,4 @@ sequenceDiagram
         OrderService->>UI: notifySessionTimeout(orderId)
         UI-->>User: displayError("Checkout expired. Reservation released")
     end
+```
