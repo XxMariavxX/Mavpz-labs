@@ -12,32 +12,46 @@ sequenceDiagram
 	participant Storage
 
 	User->>UI: submitCheckout(cartItems)
+	UI->>OrderService: submitOrder(userId, cartItems)
 
-	opt Already processing (REQ-SD-1)
-		UI-->>User: error("Payment already processing")
+	OrderService->>Storage: getUserStatus(userId)
+	Storage-->>OrderService: user.status
+
+	break Користувач banned або не авторизований (REQ-SD-2, REQ-UW-3)
+		OrderService-->>UI: error(UserBlocked)
+		UI-->>User: error("Оформлення недоступне")
 	end
 
-	UI->>OrderService: createOrder(userId, cartItems)
+	OrderService->>Storage: findPendingOrder(userId, cartItems)
+	Storage-->>OrderService: none | order(status='created')
+
+	break Order вже у статусі 'created' (REQ-SD-1, UC5-S4)
+		OrderService-->>UI: error(PaymentInProgress)
+		UI-->>User: error("Оплата вже обробляється, зачекайте")
+	end
 
 	loop Each cart item
 		OrderService->>InventoryService: checkAndReserveStock(productId, quantity)
 		InventoryService->>Storage: getStock(productId)
 		Storage-->>InventoryService: stock_quantity
 
-		alt Out of stock (REQ-UW-1, REQ-UW-6)
-			InventoryService-->>OrderService: error(InsufficientStock)
-			OrderService->>InventoryService: cancelCartHolds(cartItems)
-			OrderService-->>UI: displayStockError()
-			UI-->>User: error("Out of stock")
-		else Stock is available
+		alt Stock is available
 			InventoryService->>Storage: createHold(productId, quantity, timeout=30m)
 			Storage-->>InventoryService: holdAck
 			InventoryService-->>OrderService: stockHoldSuccess
+		else Out of stock (REQ-UW-1, REQ-UW-6)
+			break Недостатньо залишку
+				InventoryService-->>OrderService: error(InsufficientStock)
+				OrderService->>InventoryService: cancelCartHolds(cartItems)
+				OrderService-->>UI: displayStockError()
+				UI-->>User: error("Товару немає в наявності")
+			end
 		end
 	end
 
-	OrderService->>Storage: insertOrder(userId, items, totalAmount, status='created')
+	OrderService->>Storage: insertOrder(userId, orderNumber, totalAmount, status='created')
 	Storage-->>OrderService: orderId
+	OrderService->>Storage: insertOrderItems(orderId, cartItems)
 
 	OrderService->>PaymentService: initiatePayment(orderId, totalAmount)
 	PaymentService->>PG: createPaymentSession(orderId, totalAmount, returnUrl)
@@ -47,7 +61,7 @@ sequenceDiagram
 	OrderService-->>UI: redirectToPayment(paymentUrl)
 	UI-->>User: redirect(paymentUrl)
 
-	alt Payment via Gateway Webhook
+	alt Вебхук від шлюзу
 		User->>PG: submitPaymentDetails()
 		PG->>PaymentService: postWebhook(transactionId, orderId, status)
 
@@ -60,22 +74,22 @@ sequenceDiagram
 			PaymentService->>UI: notifyPaymentSuccess(orderId)
 			UI-->>User: displaySuccess("Order paid")
 
-		else status == 'FAILED' (REQ-UW-2)
+		else status == 'FAILED' (REQ-UW-2, REQ-UW-7)
 			PaymentService->>OrderService: handlePaymentFailure(orderId)
 			OrderService->>Storage: updateOrderStatus(orderId, status='cancelled')
 			OrderService->>InventoryService: releaseStockReservation(orderId)
 			InventoryService->>Storage: deleteHold(orderId)
 			PaymentService-->>PG: 200 OK
 			PaymentService->>UI: notifyPaymentFailed(orderId)
-			UI-->>User: displayError("Payment failed. Try again")
+			UI-->>User: displayError("Оплата не пройшла. Повторити оплату")
 		end
 
-	else Timeout 30 min expired (REQ-SD-3, REQ-UW-7)
-		Note over OrderService,InventoryService: Background worker (TTL = 30m)
+	else Таймаут 30 хв (REQ-SD-3, REQ-UW-7)
+		Note over OrderService,InventoryService: Фоновий worker (TTL = 30m)
 		OrderService->>Storage: updateOrderStatus(orderId, status='cancelled')
 		OrderService->>InventoryService: releaseStockReservation(orderId)
 		InventoryService->>Storage: expireHold(orderId)
 		OrderService->>UI: notifySessionTimeout(orderId)
-		UI-->>User: displayError("Checkout expired. Reservation released")
+		UI-->>User: displayError("Час оплати минув. Резерв знято")
 	end
 ```
