@@ -30,23 +30,18 @@ sequenceDiagram
 		UI-->>User: error("Оплата вже обробляється, зачекайте")
 	end
 
-	loop Each cart item
-		OrderService->>InventoryService: checkAndReserveStock(productId, quantity)
-		InventoryService->>Storage: getStock(productId)
-		Storage-->>InventoryService: stock_quantity
+	OrderService->>InventoryService: checkAndReserveStock(productId, quantity)
+	InventoryService->>Storage: getStock(productId)
+	Storage-->>InventoryService: stock_quantity
+	InventoryService->>Storage: createHold(productId, quantity, timeout=30m)
+	Storage-->>InventoryService: holdAck
+	InventoryService-->>OrderService: stockHoldSuccess
 
-		alt Stock is available
-			InventoryService->>Storage: createHold(productId, quantity, timeout=30m)
-			Storage-->>InventoryService: holdAck
-			InventoryService-->>OrderService: stockHoldSuccess
-		else Out of stock (REQ-UW-1, REQ-UW-6)
-			break Недостатньо залишку
-				InventoryService-->>OrderService: error(InsufficientStock)
-				OrderService->>InventoryService: cancelCartHolds(cartItems)
-				OrderService-->>UI: displayStockError()
-				UI-->>User: error("Товару немає в наявності")
-			end
-		end
+	break Недостатньо залишку (REQ-UW-1, REQ-UW-6)
+		InventoryService--xOrderService: error(InsufficientStock)
+		OrderService-xInventoryService: cancelCartHolds(cartItems)
+		OrderService--xUI: displayStockError()
+		UI--xUser: error("Товару немає в наявності")
 	end
 
 	OrderService->>Storage: insertOrder(userId, orderNumber, totalAmount, status='created')
@@ -61,35 +56,28 @@ sequenceDiagram
 	OrderService-->>UI: redirectToPayment(paymentUrl)
 	UI-->>User: redirect(paymentUrl)
 
-	alt Вебхук від шлюзу
-		User->>PG: submitPaymentDetails()
-		PG->>PaymentService: postWebhook(transactionId, orderId, status)
+	User->>PG: submitPaymentDetails()
+	PG->>PaymentService: postWebhook(transactionId, orderId, status)
+	PaymentService->>OrderService: confirmPayment(orderId)
+	OrderService->>Storage: updateOrderStatus(orderId, status='paid')
+	OrderService->>InventoryService: commitStockDeduction(orderId)
+	InventoryService->>Storage: finalizeStockDeduction(orderId)
+	PaymentService-->>PG: 200 OK
+	PaymentService->>UI: notifyPaymentSuccess(orderId)
+	UI-->>User: displaySuccess("Order paid")
 
-		alt status == 'SUCCESS' (REQ-ED-2)
-			PaymentService->>OrderService: confirmPayment(orderId)
-			OrderService->>Storage: updateOrderStatus(orderId, status='paid')
-			OrderService->>InventoryService: commitStockDeduction(orderId)
-			InventoryService->>Storage: finalizeStockDeduction(orderId)
-			PaymentService-->>PG: 200 OK
-			PaymentService->>UI: notifyPaymentSuccess(orderId)
-			UI-->>User: displaySuccess("Order paid")
+	PaymentService--xOrderService: handlePaymentFailure(orderId) [status == 'FAILED', REQ-UW-2, REQ-UW-7]
+	OrderService--xStorage: updateOrderStatus(orderId, status='cancelled')
+	OrderService--xInventoryService: releaseStockReservation(orderId)
+	InventoryService--xStorage: deleteHold(orderId)
+	PaymentService--xPG: 200 OK
+	PaymentService--xUI: notifyPaymentFailed(orderId)
+	UI--xUser: displayError("Оплата не пройшла. Повторити оплату")
 
-		else status == 'FAILED' (REQ-UW-2, REQ-UW-7)
-			PaymentService->>OrderService: handlePaymentFailure(orderId)
-			OrderService->>Storage: updateOrderStatus(orderId, status='cancelled')
-			OrderService->>InventoryService: releaseStockReservation(orderId)
-			InventoryService->>Storage: deleteHold(orderId)
-			PaymentService-->>PG: 200 OK
-			PaymentService->>UI: notifyPaymentFailed(orderId)
-			UI-->>User: displayError("Оплата не пройшла. Повторити оплату")
-		end
-
-	else Таймаут 30 хв (REQ-SD-3, REQ-UW-7)
-		Note over OrderService,InventoryService: Фоновий worker (TTL = 30m)
-		OrderService->>Storage: updateOrderStatus(orderId, status='cancelled')
-		OrderService->>InventoryService: releaseStockReservation(orderId)
-		InventoryService->>Storage: expireHold(orderId)
-		OrderService->>UI: notifySessionTimeout(orderId)
-		UI-->>User: displayError("Час оплати минув. Резерв знято")
-	end
+	Note over OrderService,InventoryService: Фоновий worker (TTL = 30m), REQ-SD-3, REQ-UW-7
+	OrderService--xStorage: updateOrderStatus(orderId, status='cancelled')
+	OrderService--xInventoryService: releaseStockReservation(orderId)
+	InventoryService--xStorage: expireHold(orderId)
+	OrderService--xUI: notifySessionTimeout(orderId)
+	UI--xUser: displayError("Час оплати минув. Резерв знято")
 ```
