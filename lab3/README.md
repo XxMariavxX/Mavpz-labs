@@ -39,9 +39,9 @@ sequenceDiagram
 
 	break Недостатньо залишку (REQ-UW-1, REQ-UW-6)
 		InventoryService-xOrderService: error(InsufficientStock)
-		OrderService-xInventoryService: cancelCartHolds(cartItems)
-		OrderService-xUI: displayStockError()
-		UI-xUser: error("Товару немає в наявності")
+		OrderService->>InventoryService: cancelCartHolds(cartItems)
+		OrderService->>UI: displayStockError()
+		UI-->>User: error("Товару немає в наявності")
 	end
 
 	OrderService->>Storage: insertOrder(userId, orderNumber, totalAmount, status='created')
@@ -67,17 +67,17 @@ sequenceDiagram
 	UI-->>User: displaySuccess("Order paid")
 
 	PaymentService-xOrderService: handlePaymentFailure(orderId) [status == 'FAILED', REQ-UW-2, REQ-UW-7]
-	OrderService-xStorage: updateOrderStatus(orderId, status='cancelled')
-	OrderService-xInventoryService: releaseStockReservation(orderId)
-	InventoryService-xStorage: deleteHold(orderId)
-	PaymentService-xPG: 200 OK
-	PaymentService-xUI: notifyPaymentFailed(orderId)
-	UI-xUser: displayError("Оплата не пройшла. Повторити оплату")
+	OrderService->>Storage: updateOrderStatus(orderId, status='cancelled')
+	OrderService->>InventoryService: releaseStockReservation(orderId)
+	InventoryService->>Storage: deleteHold(orderId)
+	PaymentService-->>PG: 200 OK
+	PaymentService->>UI: notifyPaymentFailed(orderId)
+	UI-->>User: displayError("Оплата не пройшла. Повторити оплату")
 
 	Note over OrderService,InventoryService: Фоновий worker (TTL = 30m), REQ-SD-3, REQ-UW-7
-	OrderService-xStorage: updateOrderStatus(orderId, status='cancelled')
-	OrderService-xInventoryService: releaseStockReservation(orderId)
-	InventoryService-xStorage: expireHold(orderId)
-	OrderService-xUI: notifySessionTimeout(orderId)
-	UI-xUser: displayError("Час оплати минув. Резерв знято")
+	InventoryService-xStorage: expireHold(orderId) [TTL минув, REQ-SD-3]
+	OrderService->>Storage: updateOrderStatus(orderId, status='cancelled')
+	OrderService->>InventoryService: releaseStockReservation(orderId)
+	OrderService->>UI: notifySessionTimeout(orderId)
+	UI-->>User: displayError("Час оплати минув. Резерв знято")
 ```
