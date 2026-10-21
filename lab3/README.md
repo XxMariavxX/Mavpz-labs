@@ -14,7 +14,7 @@ sequenceDiagram
 	User->>UI: submitCheckout(cartItems)
 	UI->>OrderService: submitOrder(userId, cartItems)
 
-	OrderService->>Storage: getUserStatus(userId)
+	OrderService->>Storage: validateUser(userId)
 	Storage-->>OrderService: user.status
 
 	break Користувач banned або не авторизований (REQ-SD-2, REQ-UW-3)
