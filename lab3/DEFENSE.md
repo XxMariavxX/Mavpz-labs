@@ -15,12 +15,12 @@
 
 1. **Неавторизований користувач (REQ-UW-3).** Діаграма показувала «Оформлення недоступне», хоча вимога вимагає перенаправлення на автентифікацію. 
    Виправлено: окрема гілка `alt` з редиректом на `authScreen`; `banned`/`inactive` (REQ-SD-2) — друга гілка.
-   Коміт[]
+   Коміт: *fix: add in spec idea about unauth user, change d and defense*
 2. **Резерв на checkout (REQ-ED-7).** Діаграма створювала новий hold на оформленні, хоча резерв створюється під час додавання в кошик. 
    Виправлено: крок `checkAndReserveStock` із `createHold` у `loop` по позиціях (попередня версія).
-   Коміт[]
+   Коміт: *fix: diagram*
 3. **Повідомлення про нестачу (REQ-UW-6).** Загальне «Товару немає в наявності» для нестачі товару (REQ-UW-1, REQ-UW-6). Залишено попередню версію з `InsufficientStock`, `cancelCartHolds` і `displayStockError`.
-   Коміт[]
+   Коміт: *fix: logic in a diagram, write defense*
 
 ## 3. Як діаграма деталізує UC-5 і UC-6
 
