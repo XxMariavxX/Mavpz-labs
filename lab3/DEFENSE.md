@@ -18,15 +18,15 @@
 1. **Неавторизований користувач (REQ-UW-3).** Діаграма показувала «Оформлення недоступне», хоча вимога передбачає редирект на автентифікацію. 
    Виправлено: ` (окрема гілка з `authScreen`; `banned`/`inactive` — друга гілка, REQ-SD-2.
    Обидві помилкові гілки обгорнуто в `break` на верхньому рівні (діаграма 1), щоб сценарій не продовжувався після відмови.
-   Коміт виправлення — [`cc45098`].
+   Коміт виправлення — [`cc45098`] — `fix: add in spec idea about unauth user, change d and defense`.
 
 2. **Резерв при оформленні (REQ-ED-7).** Діаграма створювала hold на оформленні, тоді як REQ-ED-7 вимагає резерв при додаванні в кошик. Розбіжність внесли `a206d05` і `1b8de02` (обидва «fix: diagram»).
    Виправлено: при додаванні створюється hold. На оформленні `checkAndReserveStock` перевіряє активний hold і створює новий лише тоді, коли hold прострочено (REQ-UB-5). Рішення зафіксовано в `adr/0001-reservation-storage.md`.
-   Коміт виправлення []
+   Коміт виправлення — [`8c6577c`](https://github.com/XxMariavxX/Mavpz-labs/commit/8c6577c) — `refactor: change after AI-check and feat about create hold also add break to position where the move should close`.
 
 3. **Цикл, вихід з нього і нотація.** `break` усередині `loop` виходить лише з циклу, тому після нестачі діаграма продовжувала створювати `Order` .
    Виправлено: цикл збирає результат кожної позиції, після циклу стоїть `break` на верхньому рівні. Одночасно прибрано `-x` (знищення об'єкта) з нестачі, FAILED і TTL: вебхук і TTL — `-)`, відповідь — `-->>`, відповідь додано для `insertOrderItems`, `updateOrderStatus`, `commitStockDeduction`. 
-   Комíт виправлення — [].
+   Коміт виправлення — [`8c6577c`]— `refactor: change after AI-check and feat about create hold also add break to position where the move should close`.
 
 ## 3. Ключові рішення
 
