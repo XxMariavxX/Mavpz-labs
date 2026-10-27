@@ -1,108 +1,50 @@
 # Activity-діаграма процесу: UC-5 «Оформити замовлення» та UC-6 «Обробити підтвердження оплати»
 
-Позначення: один початковий вузол, дії — дієслівні фрази, умови в `[дужках]` на кожному виході з ромба, `merge` (●) для злиття альтернатив, `fork/join` (чорна смуга) для паралельних дій, доріжки — ролі.
+Позначення: один початковий вузол, дії — дієслівні фрази, умови в `[дужках]` на кожному виході з ромба, `fork/join` (чорна смуга) для паралельних дій. Відповідальність (Client / System / Gateway) вказана в тексті дій: Gateway — лише рішення `Результат оплати`. Доріжки (swimlanes) у Mermaid flowchart не підтримуються нативно, тому роль не винесено в окремі `subgraph`: це прибрало перетини ліній, які робили діаграму нечитабельною на GitHub.
 
-```mermaid
+```
 flowchart TD
-    %% ---------- Client ----------
-    subgraph Client["Користувач / UI"]
-        start(( ))
-        a1[Підтвердити оформлення]
-        a2[Перенаправити на оплату]
-        a3[Показати помилку оплати]
-        dRetry{Повторити оплату?}
-        aOk[Показати успішне оформлення]
-        aAuth[Перенаправити на автентифікацію]
-        aBlk[Показати: оформлення недоступне]
-        aNoStock[Показати: товару немає в наявності]
-    end
+    start((Старт)) --> a1[Підтвердити оформлення]
+    a1 --> dUser{Користувач активний?}
 
-    %% ---------- System ----------
-    subgraph System["Система (OrderService / InventoryService)"]
-        dUser{Користувач активний?}
-        dPend{Є Order у статусі created?}
-        aBlock[Заблокувати повторне списання]
-        mLoop((" "))
-        aCheck[Перевірити позицію кошика]
-        dHold{Hold активний?}
-        dStock{Залишок ≥ кількості?}
-        aHold[Створити hold 30 хв]
-        aShort[Позначити позицію як недостатню]
-        mItem((" "))
-        dAll{Усі позиції перевірено?}
-        dFail{Є недостатні позиції?}
-        aRelease0[Скасувати holds]
-        aOrder[Створити Order created і OrderItem]
-        aPay[Ініціалізувати платіж]
-        aPaid[Встановити статус paid]
-        aCancel[Встановити статус cancelled]
-        aExpire[Закрити сесію, expireHold]
-        aCancel2[Встановити статус cancelled]
-        aRelease2[Звільнити резерв]
-        fork1[" "]
-        aDeduct[Списати залишок]
-        aNotify[Надіслати сповіщення]
-        join1[" "]
-        aRelease[Звільнити резерв]
-    end
+    dUser -->|"[ні: AuthRequired]"| aAuth[Перенаправити на автентифікацію] --> finNoAuth((Редирект на автентифікацію))
+    dUser -->|"[ні: UserBlocked]"| aBlk[Показати: оформлення недоступне] --> finBlock((Оформлення недоступне))
+    dUser -->|"[так]"| dPend{Є Order у статусі created?}
 
-    %% ---------- Gateway ----------
-    subgraph Gateway["Платіжний шлюз"]
-        dWh{Результат оплати}
-    end
+    dPend -->|"[так]"| aBlock[Заблокувати повторне списання] --> finWait((Очікування оплати))
+    dPend -->|"[ні]"| loopStart[Перевірити позиції кошика]
 
-    finNoAuth(("Редирект на автентифікацію"))
-    finBlock(("Оформлення недоступне"))
-    finWait(("Очікування оплати"))
-    finNoStock(("Товару немає в наявності"))
-    finPaid(("Замовлення оплачено"))
-    finCancel(("Оформлення скасовано"))
-    finExpired(("Сесію закрито (TTL)"))
+    loopStart --> dHold{Hold активний?}
+    dHold -->|"[так]"| dAll{Усі позиції перевірено?}
+    dHold -->|"[ні]"| dStock{Залишок ≥ кількості?}
+    dStock -->|"[так]"| aHold[Створити hold 30 хв] --> dAll
+    dStock -->|"[ні]"| aShort[Позначити позицію як недостатню] --> dAll
 
-    %% ---------- Flow ----------
-    start --> a1 --> dUser
-    dUser -->|"[ні: AuthRequired]"| aAuth --> finNoAuth
-    dUser -->|"[ні: UserBlocked]"| aBlk --> finBlock
-    dUser -->|"[так]"| dPend
+    dAll -->|"[ні]"| loopStart
+    dAll -->|"[так]"| dFail{Є недостатні позиції?}
 
-    dPend -->|"[так]"| aBlock --> finWait
-    dPend -->|"[ні]"| mLoop
+    dFail -->|"[так]"| aRelease0[Скасувати holds] --> aNoStock[Показати: товару немає в наявності] --> finNoStock((Товару немає в наявності))
+    dFail -->|"[ні]"| aOrder[Створити Order created і OrderItem] --> aPay[Ініціалізувати платіж] --> a2[Перенаправити на оплату] --> dWh{Результат оплати}
 
-    mLoop --> aCheck --> dHold
-    dHold -->|"[так]"| mItem
-    dHold -->|"[ні]"| dStock
-    dStock -->|"[так]"| aHold --> mItem
-    dStock -->|"[ні]"| aShort --> mItem
+    dWh -->|"[PAID]"| aPaid[Встановити статус paid] --> fork1[ ]
+    fork1 --> aDeduct[Списати залишок] --> join1[ ]
+    fork1 --> aNotify[Надіслати сповіщення] --> join1
+    join1 --> aOk[Показати успішне оформлення] --> finPaid((Замовлення оплачено))
 
-    mItem --> dAll
-    dAll -->|"[ні]"| mLoop
-    dAll -->|"[так]"| dFail
+    dWh -->|"[FAILED]"| aCancel[Встановити статус cancelled] --> aRelease[Звільнити резерв] --> a3[Показати помилку оплати] --> dRetry{Повторити оплату?}
+    dWh -->|"[TTL]"| aExpire[Закрити сесію, expireHold] --> aCancel2[Встановити статус cancelled] --> aRelease2[Звільнити резерв] --> finExpired((Сесію закрито TTL))
 
-    dFail -->|"[так]"| aRelease0 --> aNoStock --> finNoStock
-    dFail -->|"[ні]"| aOrder --> aPay --> a2 --> dWh
+    dRetry -->|"[так]"| loopStart
+    dRetry -->|"[ні]"| finCancel((Оформлення скасовано))
 
-    dWh -->|"[PAID]"| aPaid --> fork1
-    fork1 --> aDeduct --> join1
-    fork1 --> aNotify --> join1
-    join1 --> aOk --> finPaid
-
-    dWh -->|"[FAILED]"| aCancel --> aRelease --> a3 --> dRetry
-    dWh -->|"[TTL]"| aExpire --> aCancel2 --> aRelease2 --> finExpired
-
-    dRetry -->|"[так]"| mLoop
-    dRetry -->|"[ні]"| finCancel
-
-    %% ---------- Styling ----------
     classDef bar fill:#000,stroke:#000,color:#000,stroke-width:0px
-    classDef merge fill:#fff,stroke:#000
     class fork1,join1 bar
-    class mLoop,mItem merge
 ```
 
 ## Покриття сценаріїв
 
 | Сценарій | Шлях у діаграмі |
-|---|---|
+| --- | --- |
 | UC5-S1 (успішне створення) | `start` → `a1` → `dUser [так]` → `dPend [ні]` → `mLoop` → цикл перевірки → `dFail [ні]` → `aOrder` → `aPay` → `a2` → `dWh` |
 | UC5-S2 (PAID / UC-6) | `dWh [PAID]` → `aPaid` → `fork1` → `aDeduct` ∥ `aNotify` → `join1` → `aOk` |
 | UC5-S3 (FAILED / UC-6) | `dWh [FAILED]` → `aCancel` → `aRelease` → `a3` → `dRetry` |
