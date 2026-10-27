@@ -1,50 +1,67 @@
 # Activity-діаграма процесу: UC-5 «Оформити замовлення» та UC-6 «Обробити підтвердження оплати»
 
-Позначення: один початковий вузол, дії — дієслівні фрази, умови в `[дужках]` на кожному виході з ромба, `fork/join` (чорна смуга) для паралельних дій. Відповідальність (Client / System / Gateway) вказана в тексті дій: Gateway — лише рішення `Результат оплати`. Доріжки (swimlanes) у Mermaid flowchart не підтримуються нативно, тому роль не винесено в окремі `subgraph`: це прибрало перетини ліній, які робили діаграму нечитабельною на GitHub.
+Позначення: один початковий вузол, дії — дієслівні фрази, умови в `[дужках]` на кожному виході з ромба, `fork` / `join` (вузли з позначкою) для паралельних дій. Відповідальність (Client / System / Gateway) вказана в тексті дій: Gateway — лише рішення `Результат оплати`. Доріжки (swimlanes) у Mermaid flowchart не підтримуються нативно, тому роль не винесено в окремі `subgraph`: це прибрало перетини ліній, які робили діаграму нечитабельною на GitHub.
 
-```
+```mermaid
 flowchart TD
-    start((Старт)) --> a1[Підтвердити оформлення]
-    a1 --> dUser{Користувач активний?}
+    start(["Старт"]) --> a1["Підтвердити оформлення"]
+    a1 --> dUser{"Користувач активний?"}
 
-    dUser -->|"[ні: AuthRequired]"| aAuth[Перенаправити на автентифікацію] --> finNoAuth((Редирект на автентифікацію))
-    dUser -->|"[ні: UserBlocked]"| aBlk[Показати: оформлення недоступне] --> finBlock((Оформлення недоступне))
-    dUser -->|"[так]"| dPend{Є Order у статусі created?}
+    dUser -->|"ні: AuthRequired"| aAuth["Перенаправити на автентифікацію"]
+    aAuth --> finNoAuth(["Редирект на автентифікацію"])
+    dUser -->|"ні: UserBlocked"| aBlk["Показати оформлення недоступне"]
+    aBlk --> finBlock(["Оформлення недоступне"])
+    dUser -->|"так"| dPend{"Є Order у статусі created?"}
 
-    dPend -->|"[так]"| aBlock[Заблокувати повторне списання] --> finWait((Очікування оплати))
-    dPend -->|"[ні]"| loopStart[Перевірити позиції кошика]
+    dPend -->|"так"| aBlock["Заблокувати повторне списання"]
+    aBlock --> finWait(["Очікування оплати"])
+    dPend -->|"ні"| loopStart["Перевірити позиції кошика"]
 
-    loopStart --> dHold{Hold активний?}
-    dHold -->|"[так]"| dAll{Усі позиції перевірено?}
-    dHold -->|"[ні]"| dStock{Залишок ≥ кількості?}
-    dStock -->|"[так]"| aHold[Створити hold 30 хв] --> dAll
-    dStock -->|"[ні]"| aShort[Позначити позицію як недостатню] --> dAll
+    loopStart --> dHold{"Hold активний?"}
+    dHold -->|"так"| dAll{"Усі позиції перевірено?"}
+    dHold -->|"ні"| dStock{"Залишок не менше кількості?"}
+    dStock -->|"так"| aHold["Створити hold 30 хв"]
+    aHold --> dAll
+    dStock -->|"ні"| aShort["Позначити позицію як недостатню"]
+    aShort --> dAll
 
-    dAll -->|"[ні]"| loopStart
-    dAll -->|"[так]"| dFail{Є недостатні позиції?}
+    dAll -->|"ні"| loopStart
+    dAll -->|"так"| dFail{"Є недостатні позиції?"}
 
-    dFail -->|"[так]"| aRelease0[Скасувати holds] --> aNoStock[Показати: товару немає в наявності] --> finNoStock((Товару немає в наявності))
-    dFail -->|"[ні]"| aOrder[Створити Order created і OrderItem] --> aPay[Ініціалізувати платіж] --> a2[Перенаправити на оплату] --> dWh{Результат оплати}
+    dFail -->|"так"| aRelease0["Скасувати holds"]
+    aRelease0 --> aNoStock["Показати товару немає в наявності"]
+    aNoStock --> finNoStock(["Товару немає в наявності"])
+    dFail -->|"ні"| aOrder["Створити Order created і OrderItem"]
+    aOrder --> aPay["Ініціалізувати платіж"]
+    aPay --> a2["Перенаправити на оплату"]
+    a2 --> dWh{"Результат оплати"}
 
-    dWh -->|"[PAID]"| aPaid[Встановити статус paid] --> fork1[ ]
-    fork1 --> aDeduct[Списати залишок] --> join1[ ]
-    fork1 --> aNotify[Надіслати сповіщення] --> join1
-    join1 --> aOk[Показати успішне оформлення] --> finPaid((Замовлення оплачено))
+    dWh -->|"PAID"| aPaid["Встановити статус paid"]
+    aPaid --> fork1(["fork"])
+    fork1 --> aDeduct["Списати залишок"]
+    fork1 --> aNotify["Надіслати сповіщення"]
+    aDeduct --> join1(["join"])
+    aNotify --> join1
+    join1 --> aOk["Показати успішне оформлення"]
+    aOk --> finPaid(["Замовлення оплачено"])
 
-    dWh -->|"[FAILED]"| aCancel[Встановити статус cancelled] --> aRelease[Звільнити резерв] --> a3[Показати помилку оплати] --> dRetry{Повторити оплату?}
-    dWh -->|"[TTL]"| aExpire[Закрити сесію, expireHold] --> aCancel2[Встановити статус cancelled] --> aRelease2[Звільнити резерв] --> finExpired((Сесію закрито TTL))
+    dWh -->|"FAILED"| aCancel["Встановити статус cancelled"]
+    aCancel --> aRelease["Звільнити резерв"]
+    aRelease --> a3["Показати помилку оплати"]
+    a3 --> dRetry{"Повторити оплату?"}
+    dWh -->|"TTL"| aExpire["Закрити сесію expireHold"]
+    aExpire --> aCancel2["Встановити статус cancelled"]
+    aCancel2 --> aRelease2["Звільнити резерв"]
+    aRelease2 --> finExpired(["Сесію закрито TTL"])
 
-    dRetry -->|"[так]"| loopStart
-    dRetry -->|"[ні]"| finCancel((Оформлення скасовано))
-
-    classDef bar fill:#000,stroke:#000,color:#000,stroke-width:0px
-    class fork1,join1 bar
+    dRetry -->|"так"| loopStart
+    dRetry -->|"ні"| finCancel(["Оформлення скасовано"])
 ```
 
 ## Покриття сценаріїв
 
 | Сценарій | Шлях у діаграмі |
-| --- | --- |
+|---|---|
 | UC5-S1 (успішне створення) | `start` → `a1` → `dUser [так]` → `dPend [ні]` → `mLoop` → цикл перевірки → `dFail [ні]` → `aOrder` → `aPay` → `a2` → `dWh` |
 | UC5-S2 (PAID / UC-6) | `dWh [PAID]` → `aPaid` → `fork1` → `aDeduct` ∥ `aNotify` → `join1` → `aOk` |
 | UC5-S3 (FAILED / UC-6) | `dWh [FAILED]` → `aCancel` → `aRelease` → `a3` → `dRetry` |
