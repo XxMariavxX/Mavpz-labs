@@ -4,7 +4,9 @@
 %%{init: {'theme': 'neutral'}}%%
 flowchart TD
     subgraph Client [" Користувач / UI "]
-        Start([Початок: submitCheckout]) --> VU{User.status == active?}
+        CartAdd[Додати товар у кошик] --> CartHold[Зарезервувати залишок: createHold 30 хв]
+        CartHold --> Start([Початок: submitCheckout])
+        Start --> VU{User.status == active?}
         VU -- "ні" --> Auth[Редирект на автентифікацію / Помилка]
         Auth --> End1([Кінець: cancelled])
         Redirect[UI: Редирект на сторінку оплати]
@@ -21,7 +23,7 @@ flowchart TD
         Hold -- "так" --> Verified[stockVerified]
         Hold -- "ні" --> Stock{stock_quantity >= quantity?}
         
-        Stock -- "так" --> CreateHold[createHold 30 хв] --> Verified
+        Stock -- "так" --> CreateHold[Повторно створити hold 30 хв] --> Verified
         Stock -- "ні" --> Insufficient[stockFailed: InsufficientStock]
         
         Verified --> Next{Ще позиції?}
@@ -57,7 +59,7 @@ flowchart TD
     end
 
     %% Зворотна стрілка для повторної оплати (повернення до створення/ініціалізації)
-    Retry -- "так" --> InsertOrder
+    Retry -- "так" --> Loop
 ```
 
 ## Покриття сценаріїв
