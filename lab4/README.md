@@ -70,6 +70,6 @@ flowchart TD
 | UC5-S2 | WaitWebhook → PAID → Deduct |
 | UC5-S3 | WaitWebhook → FAILED → Release |
 | UC5-S4 | Pending → Block |
-| UC5-S5 | Retry → InsertOrder |
+| UC5-S5 | Retry → Loop → InsertOrder |
 | UC5-S6 | Stock → Insufficient |
 ```<|end|><|start|> fileList=write xml<|message|><rfl:parameter name="path">
