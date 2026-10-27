@@ -15,7 +15,7 @@
 
 ## 3. Кроки процесу
 
-1. `submitCheckout` → перевірка `User` (`active`/`AuthRequired`/`UserBlocked`).
+1. `submitCheckout` → перевірка `User`: якщо не автентифіковано (`AuthRequired`) — редирект на автентифікацію (REQ-UW-3); якщо `User.status = banned` (`UserBlocked`) — показ «оформлення недоступне» (REQ-SD-2); інакше — далі.
 2. Перевірка наявності `Order` у статусі `created` — блокування повторного списання (REQ-SD-1).
 3. Цикл по позиціях: перевірка активного `Hold`; якщо відсутній/прострочений — перевірка `stock_quantity`, за наявності створюється новий `Hold` на 30 хв (REQ-UB-5, REQ-ED-7, REQ-UB-9).
 4. Якщо є позиція з недостатнім залишком — скасування усіх `Hold`, помилка, `Order` не створюється (REQ-UW-1, REQ-UW-6).
@@ -23,7 +23,7 @@
 6. Ініціалізація платежу, редирект на шлюз.
 7. За `PAID` — `updateOrderStatus(paid)`, паралельно (`Fork/Join`) `commitStockDeduction` та сповіщення (REQ-ED-2).
 8. За `FAILED` — `updateOrderStatus(cancelled)`, `releaseStockReservation`, пропозиція повторити оплату (REQ-UW-2).
-9. За `TTL` — фоновий/сесійний таймаут, `expireHold`, `updateOrderStatus(cancelled)`, `releaseStockReservation` (REQ-SD-3).
+9. За `TTL` — фоновий/сесійний таймаут, `expireHold`, `updateOrderStatus(cancelled)`, `releaseStockReservation`; сесію закрито без повідомлення про помилку оплати (REQ-SD-3).
 
 ## 4. Критерії прийняття
 
