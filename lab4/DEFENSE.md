@@ -2,43 +2,39 @@
 
 ## 1. Намір і критерії
 
-*Намір*: описати бізнес-процес оформлення замовлення (UC-5 і UC-6) однією UML Activity-діаграмою з доріжками відповідальності (Swimlanes), узгодженою з ERD (lab1), EARS/UC (lab2) і sequence (lab3).
+*Намір*: описати бізнес-процес оформлення замовлення (UC-5 і UC-6) однією UML Activity-діаграмою з доріжками відповідальності (Swimlanes), узгодженою з ERD (lab1), EARS/UC (lab2) і Sequence (lab3).
 
 *Критерії*:
-- Окрема Activity-діаграма на процес UC-5/UC-6 із 3 Swimlanes (`Client`, `System`, `Gateway`).
-- Гілки PAID/FAILED/TTL/повторне списання/недостатній залишок.
-- У діаграмі є розгалуження (`if/else`) і паралельна гілка (`fork/join`).
+- Одна Activity-діаграма з Swimlanes (`Client`, `System`, `Gateway`).
+- Розгалуження (`if/else`) та паралельна гілка (`fork/join`).
+- Покрито UC5-S1…S6, гілки PAID/FAILED/TTL/повторне списання/недостатній залишок/авторизація.
+- Повнота переходів, досяжність вузлів, узгодженість із UC (lab2) і Sequence (lab3).
 - Діаграма рендериться в Mermaid без помилок.
-- Повнота переходів і досяжність станів; узгодженість із UC (lab2) і Sequence (lab3).
 
-## 2. Топ-3 розбіжності (spec ↔ артефакт) і виправлення
+## 2. Топ-3 розбіжності (spec ↔ артефакт) + коміт-виправлення
 
-1. **Повторне списання (REQ-SD-1).** Спершу блокування робили в UI. Виправлено: перевірка `Order` у статусі `created` на сервері (гілка `Pending` у Swimlane `System`). 
-   Коміт: `3aff223`.
-2. **Резерв при оформленні (REQ-ED-7, REQ-UB-5).** Розбіжність була реальною: діаграма показувала створення hold як основний крок checkout. Виправлено: hold створюється при додаванні в кошик; на оформленні перевіряється активний hold і створюється новий лише коли попередній відсутній або прострочений.
-   Коміт: `d3227be`.
-3. **Структура процесу та повторна оплата (Swimlanes, UC5-S5).** Swimlanes і `Fork/Join` уже були виправлені в попередньому коміті, але `Retry` обходив перевірку hold/залишку. Виправлено: `Retry` повертається до циклу перевірки позицій, після чого створюється новий `Order`.
-   Коміт: `d3227be`.
+1. **Повторне списання (REQ-SD-1).** У першій версії блокування було в UI. Виправлено: перевірка `Order` у статусі `created` на стороні `System` (гілка `CheckPending`). Коміт: `3aff223` — `fix: grouped by swimlanes` (перенесення перевірки в System; деталі — у поточних змінах, коміт за автором).
+2. **Життєвий цикл `Hold` (REQ-ED-7, REQ-UB-5).** Резерв створюється при додаванні в кошик; на оформленні перевіряється активний hold і створюється новий лише коли попередній відсутній або прострочений (`HoldCheck` → `CreateHoldNew`). Коміт: `d3227be` — `fix(lab4): align hold lifecycle with checkout spec`.
+3. **Повторна оплата (UC5-S5, REQ-UW-2).** Раніше `Retry` вів напряму до ініціалізації, оминаючи перевірку залишку. Виправлено: `Retry (так) → Loop` (повторна перевірка hold/залишку), далі створюється новий `Order`. Коміт: буде зафіксовано в поточних змінах.
 
 ## 3. Ключове рішення (ADR)
 
-- `adr/adr-0001-process-flow.md` — обрано одну Activity-діаграму з 3 Swimlanes та основними гілками (PAID/FAILED/TTL/повтор/недостача) замість окремих діаграм на сценарій: узгоджено з sequence (lab3).
-- Паралельна гілка (fork/join) при PAID: одночасно `commitStockDeduction` і сповіщення покупця.
+Обрано одну Activity-діаграму з Swimlanes (`Client/System/Gateway`) та гілками PAID/FAILED/TTL/повтор/недостача замість 6 окремих діаграм (узгоджено з Lab 3, зручніше для рев'ю). При PAID застосовано `Fork/Join` для паралельного `commitStockDeduction` та сповіщення. Розбіжності вирішувались через правки `spec.md` та `README.md`, а не через ручний «патч» лише в DEFENSE. ADR: `lab4/adr/adr-0001-process-flow.md`.
 
 ## 4. Перевірка узгодженості з попередньою моделлю
 
-Перевіряла так:
-1. Звірила кожну гілку Activity та відповідні Swimlanes із sequence-діаграмою Lab 3 (UC5-S1…S6).
-2. Звірила статуси `Order`/`User`, сутності ERD (lab1) і REQ/UC-ідентифікатори (lab2).
-3. Рендер Mermaid без помилок; недосяжних станів немає.
+- **З Lab 1 (ERD):** статуси `Order` (`created`/`paid`/`cancelled`), `User.status`, `OrderItem`, `Product.stock_quantity` узгоджені.
+- **З Lab 2 (UC/EARS):** покрито UC5-S1…S6, `UC-Auth-S1`, `REQ-SD-1/2/3`, `REQ-ED-1/2/7`, `REQ-UW-1/2/6`.
+- **З Lab 3 (Sequence):** вузли та переходи узгоджені з діаграмами 1–6; `AuthRequired`/`UserBlocked` розрізнені; TTL відображений.
+- **Аудит артефакту:** перевірена наявність розгалужень, `fork/join`, наявність початкового вузла `Start`, досяжність критичних гілок, узгодженість `Retry` з перевіркою залишку. Діаграма валідована через `mermaid-cli` (ререндер без помилок). 
 
-Покриття сценаріїв за доріжками:
+## 5. Покриття сценаріїв
 
-| Сценарій | Доріжки (Swimlanes) | Вузол діаграми |
+| Сценарій | Доріжки | Ключові вузли |
 |---|---|---|
-| UC5-S1 | Client → System → Gateway | VU → Pending → Loop → InsertOrder → Redirect |
-| UC5-S2 | Gateway → System | WaitWebhook (PAID) → Paid → Fork (Deduct / NotifyOk) → Join |
-| UC5-S3 | Gateway → System → Client | WaitWebhook (FAILED) → Cancelled → Release → NotifyFail |
-| UC5-S4 | Client → System | Pending (так) → Block |
-| UC5-S5 | Client → System | Retry (так) → Loop → InsertOrder |
-| UC5-S6 | System | Stock (ні) → Insufficient → CancelHolds |
+| UC5-S1 | Client → System → Gateway | `Start` → `CheckUser` → `CheckPending` → цикл hold/stock → `InsertOrder` → `Redirect` |
+| UC5-S2 | Gateway → System → Client | `WaitWebhook(PAID)` → `UpdatePaid` → `Fork` → `Deduct`/`NotifyOk` → `Join` |
+| UC5-S3 | Gateway → System → Client | `WaitWebhook(FAILED)` → `UpdateCancel` → `Release` → `NotifyFail` → `Retry` |
+| UC5-S4 | Client → System | `CheckPending(так)` → `BlockRep` |
+| UC5-S5 | Client → System → Gateway | `Retry(так)` → `Loop` (повторна перевірка) → `InsertOrder` |
+| UC5-S6 | System | `StockCheck(ні)` → `Insufficient` → `CancelHolds` |
