@@ -238,10 +238,8 @@ sequenceDiagram
 	Storage-->>OrderService: order(status='created')
 	deactivate Storage
 
-	break Order вже у статусі 'created' (REQ-SD-1, Варіант 4, UC5-S4)
-		OrderService-->>UI: error(PaymentInProgress)
-		UI-->>User: error("Оплата вже обробляється, зачекайте")
-	end
+	OrderService-->>UI: error(PaymentInProgress)
+	UI-->>User: error("Оплата вже обробляється, зачекайте")
 
 	deactivate OrderService
 	Note over OrderService,Storage: PaymentService і PaymentGateway не викликаються, другий запит на списання не створюється
