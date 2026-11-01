@@ -92,12 +92,10 @@ sequenceDiagram
 	Storage-->>OrderService: itemsInserted
 	deactivate Storage
 
-	activate PaymentService
 	OrderService->>PaymentService: initiatePayment(orderId, totalAmount)
 	PaymentService->>PG: createPaymentSession(orderId, totalAmount, returnUrl)
 	PG-->>PaymentService: sessionCreated(paymentUrl, transactionId)
 	PaymentService-->>OrderService: paymentUrl
-	deactivate PaymentService
 
 	OrderService-->>UI: redirectToPayment(paymentUrl)
 	deactivate OrderService

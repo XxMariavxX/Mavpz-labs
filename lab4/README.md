@@ -3,59 +3,39 @@
 Позначення: один початковий вузол, дії — дієслівні фрази, умови в `[дужках]` на кожному виході з ромба, `fork` / `join` (вузли з позначкою) для паралельних дій.
 
 ```mermaid
-flowchart TD
-    start(["Старт"]) --> a1["Підтвердити оформлення"]
-    a1 --> dUser{"Користувач активний?"}
-
-    dUser -->|"ні: AuthRequired"| aAuth["Перенаправити на автентифікацію"]
-    aAuth --> finNoAuth(["Редирект на автентифікацію"])
-    dUser -->|"ні: UserBlocked"| aBlk["Показати оформлення недоступне"]
-    aBlk --> finBlock(["Оформлення недоступне"])
-    dUser -->|"так"| dPend{"Є Order у статусі created?"}
-
-    dPend -->|"так"| aBlock["Заблокувати повторне списання"]
-    aBlock --> finWait(["Очікування оплати"])
-    dPend -->|"ні"| loopStart["Перевірити позиції кошика"]
-
-    loopStart --> dHold{"Hold активний?"}
-    dHold -->|"так"| dAll{"Усі позиції перевірено?"}
-    dHold -->|"ні"| dStock{"Залишок не менше кількості?"}
-    dStock -->|"так"| aHold["Створити hold 30 хв"]
-    aHold --> dAll
-    dStock -->|"ні"| aShort["Позначити позицію як недостатню"]
-    aShort --> dAll
-
-    dAll -->|"ні"| loopStart
-    dAll -->|"так"| dFail{"Є недостатні позиції?"}
-
-    dFail -->|"так"| aRelease0["Скасувати holds"]
-    aRelease0 --> aNoStock["Показати товару немає в наявності"]
-    aNoStock --> finNoStock(["Товару немає в наявності"])
-    dFail -->|"ні"| aOrder["Створити Order created і OrderItem"]
-    aOrder --> aPay["Ініціалізувати платіж"]
-    aPay --> a2["Перенаправити на оплату"]
-    a2 --> dWh{"Результат оплати"}
-
-    dWh -->|"PAID"| aPaid["Встановити статус paid"]
-    aPaid --> fork1(["fork"])
-    fork1 --> aDeduct["Списати залишок"]
-    fork1 --> aNotify["Надіслати сповіщення"]
-    aDeduct --> join1(["join"])
-    aNotify --> join1
-    join1 --> aOk["Показати успішне оформлення"]
-    aOk --> finPaid(["Замовлення оплачено"])
-
-    dWh -->|"FAILED"| aCancel["Встановити статус cancelled"]
-    aCancel --> aRelease["Звільнити резерв"]
-    aRelease --> a3["Показати помилку оплати"]
-    a3 --> dRetry{"Повторити оплату?"}
-    dWh -->|"TTL"| aExpire["Закрити сесію expireHold"]
-    aExpire --> aCancel2["Встановити статус cancelled"]
-    aCancel2 --> aRelease2["Звільнити резерв"]
-    aRelease2 --> finExpired(["Сесію закрито TTL"])
-
-    dRetry -->|"так"| loopStart
-    dRetry -->|"ні"| finCancel(["Оформлення скасовано"])
+flowchart TB
+    START((старт)) --> C1([Customer: Оформити замовлення])
+    C1 --> W1{WebApp: сесія дійсна?}
+    W1 -- ні --> W2[[WebApp: 401 Unauthorized]]
+    W2 --> C3([Customer: Переглянути статус])
+    W1 -- так --> O1[OrderService: прочитати ціни та залишки]
+    O1 --> O2{OrderService: товар є на складі?}
+    O2 -- ні --> O3[[insufficientStock]]
+    O3 --> C3
+    O2 -- так --> O4[OrderService: створити ORDER status = Pending]
+    O4 --> C2{Customer: онлайн-оплата?}
+    C2 -- ні --> PEND((Pending: автоскасування, UC_ExpireOrder))
+    C2 -- так --> O10[OrderService: передати на оплату]
+    O10 --> P1[PaymentGateway: списати кошти]
+    P1 --> P2{PaymentGateway: схвалено?}
+    P2 -- approved --> F1((fork))
+    F1 --> O6[OrderService: ORDER.status = Paid]
+    F1 --> O7[OrderService: insert outbox OrderPaidEvent]
+    O6 --> J1((join: коміт))
+    O7 --> J1
+    J1 --> R1[OrderService: Relay читає outbox]
+    R1 --> R2[OrderService: надіслати email]
+    R2 --> R3{Доставлено?}
+    R3 -- так --> C3
+    R3 -- ні --> R4[Спроба +1]
+    R4 -- спроба < 4 --> R2
+    R4 -- спроба ≥ 4 --> R5[[FAILED, DLQ]]
+    R5 --> C3
+    P2 -- declined --> O9[OrderService: status = Unpaid, резерв знято]
+    O9 --> O11[[Статус замовлення]]
+    O11 --> C3
+    O9 --> UNP((Unpaid: повтор оплати, UC_RetryPayment))
+    C3 --> STOP((кінець))
 ```
 
 ## Покриття сценаріїв
