@@ -1,54 +1,64 @@
 # Activity-діаграма процесу: UC-5 «Оформити замовлення» та UC-6 «Обробити підтвердження оплати»
 
-Позначення: один початковий вузол, дії — дієслівні фрази, умови в `[дужках]` на кожному виході з ромба, `fork` / `join` (вузли з позначкою) для паралельних дій.
-
 ```mermaid
 flowchart TB
-    START((старт)) --> C1([Customer: Оформити замовлення])
-    C1 --> W1{WebApp: сесія дійсна?}
-    W1 -- ні --> W2[[WebApp: 401 Unauthorized]]
-    W2 --> C3([Customer: Переглянути статус])
-    W1 -- так --> O1[OrderService: прочитати ціни та залишки]
-    O1 --> O2{OrderService: товар є на складі?}
-    O2 -- ні --> O3[[insufficientStock]]
-    O3 --> C3
-    O2 -- так --> O4[OrderService: створити ORDER status = Pending]
-    O4 --> C2{Customer: онлайн-оплата?}
-    C2 -- ні --> PEND((Pending: автоскасування, UC_ExpireOrder))
-    C2 -- так --> O10[OrderService: передати на оплату]
-    O10 --> P1[PaymentGateway: списати кошти]
-    P1 --> P2{PaymentGateway: схвалено?}
-    P2 -- approved --> F1((fork))
-    F1 --> O6[OrderService: ORDER.status = Paid]
-    F1 --> O7[OrderService: insert outbox OrderPaidEvent]
-    O6 --> J1((join: коміт))
-    O7 --> J1
-    J1 --> R1[OrderService: Relay читає outbox]
-    R1 --> R2[OrderService: надіслати email]
-    R2 --> R3{Доставлено?}
-    R3 -- так --> C3
-    R3 -- ні --> R4[Спроба +1]
-    R4 -- спроба < 4 --> R2
-    R4 -- спроба ≥ 4 --> R5[[FAILED, DLQ]]
-    R5 --> C3
-    P2 -- declined --> O9[OrderService: status = Unpaid, резерв знято]
-    O9 --> O11[[Статус замовлення]]
-    O11 --> C3
-    O9 --> UNP((Unpaid: повтор оплати, UC_RetryPayment))
-    C3 --> STOP((кінець))
+    START((старт)) --> A1([Client: submitCheckout])
+    A1 --> D_USER{System: користувач авторизований і активний?}
+    D_USER -- "ні: AuthRequired" --> A_AUTH([Client: redirect на автентифікацію])
+    A_AUTH --> FIN_AUTH((кінець: не авторизовано))
+    D_USER -- "ні: UserBlocked" --> A_BLK([Client: Оформлення недоступне])
+    A_BLK --> FIN_BLK((кінець: заблоковано))
+    D_USER -- так --> D_PEND{System: є Order у статусі created?}
+    D_PEND -- так --> A_PAYING([Client: Оплата вже обробляється])
+    A_PAYING --> FIN_PAYING((кінець: очікує оплату))
+    D_PEND -- ні --> L_HOLD[/"System: цикл по позиціях кошика"/]
+    L_HOLD --> D_HOLD{System: активний Hold для позиції?}
+    D_HOLD -- так --> V_OK([System: позиція підтверджена])
+    D_HOLD -- "ні або прострочений" --> D_STOCK{System: stock_quantity >= quantity?}
+    D_STOCK -- так --> A_CREATEHOLD([System: створити Hold на 30 хв])
+    A_CREATEHOLD --> V_OK
+    D_STOCK -- ні --> A_STOCKFAIL([System: InsufficientStock])
+    A_STOCKFAIL --> A_CANCELHOLDS([System: скасувати всі Hold кошика])
+    A_CANCELHOLDS --> A_NOSTOCK([Client: Товару немає в наявності])
+    A_NOSTOCK --> FIN_NOSTOCK((кінець: недостатній залишок))
+    V_OK --> D_ALL{System: усі позиції перевірено?}
+    D_ALL -- ні --> L_HOLD
+    D_ALL -- так --> D_ANYFAIL{System: є позиція без залишку?}
+    D_ANYFAIL -- так --> A_CANCELHOLDS
+    D_ANYFAIL -- ні --> A_CREATEORDER([System: створити Order status created + OrderItem, total])
+    A_CREATEORDER --> A_INITPAY([System: ініціалізувати платіж])
+    A_INITPAY --> A_REDIRECT([Client: redirect на шлюз])
+    A_REDIRECT --> D_RESULT{Gateway: результат платежу?}
+    D_RESULT -- PAID --> A_PAID([System: Order status paid])
+    A_PAID --> F1((fork))
+    F1 --> A_DEDUCT([System: commitStockDeduction])
+    F1 --> A_NOTIFY([System: сповіщення клієнту])
+    A_DEDUCT --> J1((join))
+    A_NOTIFY --> J1
+    J1 --> FIN_PAID((кінець: оплачено))
+    D_RESULT -- FAILED --> A_CANCELLED([System: Order status cancelled])
+    A_CANCELLED --> A_RELEASE([System: releaseStockReservation])
+    A_RELEASE --> A_RETRYOFFER([Client: Оплата не пройшла. Повторити?])
+    A_RETRYOFFER --> D_RETRY{Client: повторити оплату?}
+    D_RETRY -- так --> L_HOLD
+    D_RETRY -- ні --> FIN_CANCELLED((кінець: скасовано))
+    D_RESULT -- TTL --> A_EXPIREHOLD([System: expireHold])
+    A_EXPIREHOLD --> A_CANCELLED2([System: Order status cancelled])
+    A_CANCELLED2 --> A_RELEASE2([System: releaseStockReservation])
+    A_RELEASE2 --> A_TIMEOUT([Client: Час оплати минув])
+    A_TIMEOUT --> FIN_EXPIRED((кінець: сесія закінчилась))
 ```
 
 ## Покриття сценаріїв
 
 | Сценарій | Шлях у діаграмі |
 |---|---|
-| UC5-S1 (успішне створення) | `start` → `a1` → `dUser [так]` → `dPend [ні]` → `mLoop` → цикл перевірки → `dFail [ні]` → `aOrder` → `aPay` → `a2` → `dWh` |
-| UC5-S2 (PAID / UC-6) | `dWh [PAID]` → `aPaid` → `fork1` → `aDeduct` ∥ `aNotify` → `join1` → `aOk` |
-| UC5-S3 (FAILED / UC-6) | `dWh [FAILED]` → `aCancel` → `aRelease` → `a3` → `dRetry` |
-| UC5-S4 (блокування повтору) | `dPend [так]` → `aBlock` |
-| UC5-S5 (повторна оплата) | `dRetry [так]` → `mLoop` → повторна перевірка залишку → новий `Order` |
-| UC5-S6 (недостатній залишок) | `dStock [ні]` → `aShort` → `dAll` → `dFail [так]` → `aRelease0` → `aNoStock` |
-| Неавторизований (REQ-UW-3) | `dUser [ні: AuthRequired]` → `aAuth` |
-| Заблокований (REQ-SD-2) | `dUser [ні: UserBlocked]` → `aBlk` |
-| TTL (REQ-SD-3) | `dWh [TTL]` → `aExpire` → `aCancel2` → `aRelease2` → `finExpired` (без показу помилки оплати) |
-| Неавторизований / заблокований (REQ-UW-3, REQ-SD-2) | `dUser [ні]` → `aAuth`/`aBlk` → кінцевий стан (включено в spec.md, крок 1) |
+| UC5-S1 (успішне створення) | `START` → `D_USER` так → `D_PEND` ні → `L_HOLD` → цикл перевірки hold/залишку → `D_ALL` так → `D_ANYFAIL` ні → `A_CREATEORDER` → `A_INITPAY` → `A_REDIRECT` |
+| UC5-S2 (PAID / UC-6) | `D_RESULT` PAID → `A_PAID` → `F1` fork → `A_DEDUCT` ∥ `A_NOTIFY` → `J1` join → `FIN_PAID` |
+| UC5-S3 (FAILED / UC-6) | `D_RESULT` FAILED → `A_CANCELLED` → `A_RELEASE` → `A_RETRYOFFER` → `D_RETRY` |
+| UC5-S4 (блокування повтору) | `D_PEND` так → `A_PAYING` → `FIN_PAYING` |
+| UC5-S5 (повторна оплата) | `D_RETRY` так → `L_HOLD` → повторна перевірка залишку/hold → новий `Order` |
+| UC5-S6 (недостатній залишок) | `D_STOCK` ні → `A_STOCKFAIL` → `A_CANCELHOLDS` → `A_NOSTOCK` → `FIN_NOSTOCK` |
+| Неавторизований | `D_USER` AuthRequired → `A_AUTH` → `FIN_AUTH` |
+| Заблокований | `D_USER` UserBlocked → `A_BLK` → `FIN_BLK` |
+| TTL | `D_RESULT` TTL → `A_EXPIREHOLD` → `A_CANCELLED2` → `A_RELEASE2` → `FIN_EXPIRED` |
