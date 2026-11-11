@@ -1,0 +1,1 @@
+# UML Component Diagram — архітектура платформи «My Little Pony Online»
