@@ -2,7 +2,7 @@
 
 Межа системи: усе всередині `My Little Pony Online` — наша платформа; `PaymentGateway`, `Email/SMS Provider` і `OAuth Provider` — зовнішні інтеграції.
 
-```mermaid
+```
 flowchart LR
     subgraph system["My Little Pony Online"]
         webui["Web UI"]
@@ -13,8 +13,9 @@ flowchart LR
         inventory["InventoryService"]
         payment["PaymentService"]
         data["Data Access"]
-        db[("Database")]
     end
+
+    db[("Database")]
 
     pg["PaymentGateway"]
     notify["Email/SMS Provider"]

@@ -18,7 +18,7 @@
 6. **InventoryService** — перевірка/резерв/списання залишку (hold, commit, release); required: `IStockRepo`; provided: `IInventory`.
 7. **PaymentService** — сесії, вебхуки PAID/FAILED, TTL; required: `IPaymentGateway`; provided: `IPayment`.
 8. **Data Access (Repository Layer)** — єдиний доступ до БД; provided: `IUserRepo`, `IProductRepo`, `IOrderRepo`, `IStockRepo`, `IReviewRepo`, `ICharacterRepo`.
-9. **Database** — реляційна БД (PostgreSQL), сутності lab1.
+9. **Database** — зовнішня реляційна БД (PostgreSQL), сутності lab1 (поза межею системи).
 10. **Зовнішні**: PaymentGateway (зовнішній), Email/SMS Provider (зовнішній).
 
 ## 3. Інтерфейси (provided/required)
@@ -45,7 +45,7 @@
 - Web UI → API Gateway (HTTPS/JSON).
 - API Gateway → AuthService, CatalogService, OrderService.
 - OrderService → InventoryService, PaymentService.
-- Усі сервіси → Data Access → Database.
+- Усі сервіси → Data Access → Database (зовнішня БД).
 - PaymentService → PaymentGateway (HTTPS/webhook, PAID/FAILED).
 - OrderService / AuthService → Email/SMS Provider (асинхронно).
 - Зовнішні інтеграції ізольовані за межею системи (`System_Ext`).
