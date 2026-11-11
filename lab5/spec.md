@@ -17,8 +17,9 @@
 5. **OrderService** — створення/оновлення `Order`, ініціалізація оплати, TTL, повторна оплата; required: `IOrderRepo`, `IInventory`, `IPayment`; provided: `IOrder`.
 6. **InventoryService** — перевірка/резерв/списання залишку (hold, commit, release); required: `IStockRepo`; provided: `IInventory`.
 7. **PaymentService** — сесії, вебхуки PAID/FAILED, TTL; required: `IPaymentGateway`; provided: `IPayment`.
-8. **Data Access (Repository Layer)** — єдиний доступ до БД; provided: `IUserRepo`, `IProductRepo`, `IOrderRepo`, `IStockRepo`, `IReviewRepo`, `ICharacterRepo`.
-9. **Database** — зовнішня реляційна БД (PostgreSQL), сутності lab1 (поза межею системи).
+8. **NotificationService** — відправка email/SMS, relay/outbox; required: `INotification`; provided: `INotify`.
+9. **Data Access (Repository Layer)** — єдиний доступ до БД; provided: `IUserRepo`, `IProductRepo`, `IOrderRepo`, `IStockRepo`, `IReviewRepo`, `ICharacterRepo`.
+10. **Database** — зовнішня реляційна БД (PostgreSQL), сутності lab1 (поза межею системи).
 10. **Зовнішні**: PaymentGateway (зовнішній), Email/SMS Provider (зовнішній).
 
 ## 3. Інтерфейси (provided/required)
@@ -39,6 +40,7 @@
 - IPaymentGateway: provided by PaymentGateway; required by PaymentService.
 - INotification: provided by Email/SMS Provider; required by OrderService, AuthService.
 - IOAuth: provided by OAuth Provider; required by AuthService.
+- INotify: provided by NotificationService; required by OrderService, AuthService.
 
 ## 4. Залежності та інтеграції
 
@@ -46,13 +48,13 @@
 - API Gateway → AuthService, CatalogService, OrderService.
 - OrderService → InventoryService, PaymentService.
 - Усі сервіси → Data Access → Database (зовнішня БД).
-- PaymentService → PaymentGateway (HTTPS/webhook, PAID/FAILED).
-- OrderService / AuthService → Email/SMS Provider (асинхронно).
+- PaymentService → PaymentGateway (HTTPS/JSON, webhook PAID/FAILED).
+- OrderService / AuthService → NotificationService → Email/SMS Provider (асинхронно).
 - Зовнішні інтеграції ізольовані за межею системи (`System_Ext`).
 
 ### 4.1 Зовнішні інтеграції
 
-- **PaymentGateway** — provided: `IPaymentGateway`; required by PaymentService; протокол HTTPS/webhook (PAID/FAILED).
+- **PaymentGateway** — provided: `IPaymentGateway`; required by PaymentService; протокол HTTPS/JSON (webhook PAID/FAILED).
 - **Email/SMS Provider** — provided: `INotification`; required by OrderService, AuthService; асинхронна відправка.
 - **OAuth Provider** — provided: `IOAuth`; required by AuthService; OAuth 2.0 для входу через зовнішнього провайдера.
 
