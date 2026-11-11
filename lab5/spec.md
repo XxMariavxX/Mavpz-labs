@@ -35,6 +35,9 @@
 - IReviewRepo: provided by Data Access; required by CatalogService.
 - IOrderRepo: provided by Data Access; required by OrderService.
 - IStockRepo: provided by Data Access; required by InventoryService.
+- IPaymentGateway: provided by PaymentGateway; required by PaymentService.
+- INotification: provided by Email/SMS Provider; required by OrderService, AuthService.
+- IOAuth: provided by OAuth Provider; required by AuthService.
 
 ## 4. Залежності та інтеграції
 
@@ -45,6 +48,12 @@
 - PaymentService → PaymentGateway (HTTPS/webhook, PAID/FAILED).
 - OrderService / AuthService → Email/SMS Provider (асинхронно).
 - Зовнішні інтеграції ізольовані за межею системи (`System_Ext`).
+
+### 4.1 Зовнішні інтеграції
+
+- **PaymentGateway** — provided: `IPaymentGateway`; required by PaymentService; протокол HTTPS/webhook (PAID/FAILED).
+- **Email/SMS Provider** — provided: `INotification`; required by OrderService, AuthService; асинхронна відправка.
+- **OAuth Provider** — provided: `IOAuth`; required by AuthService; OAuth 2.0 для входу через зовнішнього провайдера.
 
 ## 5. Відповідальність компонентів
 
