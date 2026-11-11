@@ -20,7 +20,7 @@
 8. **NotificationService** — відправка email/SMS, relay/outbox; required: `INotification`; provided: `INotify`.
 9. **Data Access (Repository Layer)** — єдиний доступ до БД; provided: `IUserRepo`, `IProductRepo`, `IOrderRepo`, `IStockRepo`, `IReviewRepo`, `ICharacterRepo`.
 10. **Database** — зовнішня реляційна БД (PostgreSQL), сутності lab1 (поза межею системи).
-10. **Зовнішні**: PaymentGateway (зовнішній), Email/SMS Provider (зовнішній).
+11. **Зовнішні**: PaymentGateway (зовнішній), Email/SMS Provider (зовнішній), OAuth Provider (зовнішній).
 
 ## 3. Інтерфейси (provided/required)
 
