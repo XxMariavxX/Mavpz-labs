@@ -6,6 +6,7 @@
 - **Вхідні умови**: веб-клієнт звертається до системи через HTTPS; зовнішні інтеграції — платіжний шлюз та email/SMS.
 - **Вихідні умови**: чітка межа системи, визначені provided/required-інтерфейси, трасованість кожного компонента до попередніх моделей.
 - **За межами**: інфраструктура (k8s, CI/CD), моніторинг, кешування, CDN.
+- **Примітка щодо рендеру**: використано `flowchart LR` з `subgraph` замість `C4Component` для гарантованої сумісності з GitHub Mermaid; C4-нотація відкладена.
 
 ## 2. Компоненти та інтерфейси
 
@@ -16,9 +17,10 @@
 5. **OrderService** — створення/оновлення `Order`, ініціалізація оплати, TTL, повторна оплата; required: `IOrderRepo`, `IInventory`, `IPayment`; provided: `IOrder`.
 6. **InventoryService** — перевірка/резерв/списання залишку (hold, commit, release); required: `IStockRepo`; provided: `IInventory`.
 7. **PaymentService** — сесії, вебхуки PAID/FAILED, TTL; required: `IPaymentGateway`; provided: `IPayment`.
-8. **Data Access (Repository Layer)** — єдиний доступ до БД; provided: `IUserRepo`, `IProductRepo`, `IOrderRepo`, `IStockRepo`, `IReviewRepo`, `ICharacterRepo`.
-9. **Database** — реляційна БД (PostgreSQL), сутності lab1.
-10. **Зовнішні**: PaymentGateway (зовнішній), Email/SMS Provider (зовнішній).
+8. **NotificationService** — відправка email/SMS, relay/outbox; required: `INotification`; provided: `INotify`.
+9. **Data Access (Repository Layer)** — єдиний доступ до БД; provided: `IUserRepo`, `IProductRepo`, `IOrderRepo`, `IStockRepo`, `IReviewRepo`, `ICharacterRepo`.
+10. **Database** — зовнішня реляційна БД (PostgreSQL), сутності lab1 (поза межею системи).
+11. **Зовнішні**: PaymentGateway (зовнішній), Email/SMS Provider (зовнішній), OAuth Provider (зовнішній).
 
 ## 3. Інтерфейси (provided/required)
 
@@ -35,16 +37,26 @@
 - IReviewRepo: provided by Data Access; required by CatalogService.
 - IOrderRepo: provided by Data Access; required by OrderService.
 - IStockRepo: provided by Data Access; required by InventoryService.
+- IPaymentGateway: provided by PaymentGateway; required by PaymentService.
+- INotification: provided by Email/SMS Provider; required by OrderService, AuthService.
+- IOAuth: provided by OAuth Provider; required by AuthService.
+- INotify: provided by NotificationService; required by OrderService, AuthService.
 
 ## 4. Залежності та інтеграції
 
 - Web UI → API Gateway (HTTPS/JSON).
 - API Gateway → AuthService, CatalogService, OrderService.
 - OrderService → InventoryService, PaymentService.
-- Усі сервіси → Data Access → Database.
-- PaymentService → PaymentGateway (HTTPS/webhook, PAID/FAILED).
-- OrderService / AuthService → Email/SMS Provider (асинхронно).
+- Усі сервіси → Data Access → Database (зовнішня БД).
+- PaymentService → PaymentGateway (HTTPS/JSON, webhook PAID/FAILED).
+- OrderService / AuthService → NotificationService → Email/SMS Provider (асинхронно).
 - Зовнішні інтеграції ізольовані за межею системи (`System_Ext`).
+
+### 4.1 Зовнішні інтеграції
+
+- **PaymentGateway** — provided: `IPaymentGateway`; required by PaymentService; протокол HTTPS/JSON (webhook PAID/FAILED).
+- **Email/SMS Provider** — provided: `INotification`; required by OrderService, AuthService; асинхронна відправка.
+- **OAuth Provider** — provided: `IOAuth`; required by AuthService; OAuth 2.0 для входу через зовнішнього провайдера.
 
 ## 5. Відповідальність компонентів
 

@@ -1,0 +1,108 @@
+@startuml
+skinparam componentStyle uml2
+skinparam packageStyle rectangle
+skinparam linetype ortho
+skinparam defaultTextAlignment center
+skinparam shadowing false
+
+skinparam ranksep 110
+skinparam nodesep 65
+
+title UML Component Diagram — My Little Pony Online
+
+actor "Користувач" as user
+
+' ==========================================
+' ЗОВНІШНІ ПРОВАЙДЕРИ (ЗВЕРХУ / ПРАВОРУЧ)
+' ==========================================
+package "External Services" #WhiteSmoke {
+    [OAuth Provider] as oauth <<external>>
+    [Email/SMS Provider] as notify_ext <<external>>
+    [Payment Gateway] as pg <<external>>
+}
+
+' ==========================================
+' МЕЖА СИСТЕМИ (MAIN SYSTEM)
+' ==========================================
+package "My Little Pony Online System" #LightYellow {
+
+    package "Client Layer" #White {
+        [Web UI\n(React/Next.js)] as webui <<Client>>
+    }
+
+    package "Gateway Layer" #White {
+        [API Gateway\n(Node.js)] as api <<Gateway>>
+    }
+
+    package "Business Services" #White {
+        [AuthService] as auth <<Service>>
+        [CatalogService] as catalog <<Service>>
+        [OrderService] as order <<Service>>
+        [InventoryService] as inventory <<Service>>
+        [PaymentService] as payment <<Service>>
+        [NotificationService] as notify_svc <<Service>>
+    }
+
+    package "Data Access Layer" #White {
+        [UserRepository] as user_repo <<Repository>>
+        [CatalogRepository] as cat_repo <<Repository>>
+        [OrderRepository] as order_repo <<Repository>>
+        [StockRepository] as stock_repo <<Repository>>
+        
+        database "Database\n(PostgreSQL)" as db <<Database>>
+    }
+}
+
+' ==========================================
+' ФІКСАЦІЯ ПОРЯДКУ КОЛОНОК (Щоб лінії не перетиналися)
+' ==========================================
+auth -[hidden]right-> catalog
+catalog -[hidden]right-> order
+order -[hidden]right-> inventory
+inventory -[hidden]right-> payment
+payment -[hidden]right-> notify_svc
+
+user_repo -[hidden]right-> cat_repo
+cat_repo -[hidden]right-> order_repo
+order_repo -[hidden]right-> stock_repo
+
+oauth -[hidden]right-> notify_ext
+notify_ext -[hidden]right-> pg
+
+' ==========================================
+' ЗВ'ЯЗКИ: КУЛЬКА + ПІВМІСЯЦЬ -(0-
+' ==========================================
+
+' 1. Користувач -> Web UI -> API Gateway
+user -down-> webui : браузер
+webui -(0- api : \nHTTPS API
+
+' 2. API Gateway -> Сервіси
+api -(0- auth : \nIAuth
+api -(0- catalog : \nICatalog, ICart, IReview
+api -(0- order : \nIOrder
+
+' 3. Міжсервісна взаємодія
+order -(0- inventory : \nIInventory
+order -(0- payment : \nIPayment
+order -(0- notify_svc : \nINotify
+auth -(0- notify_svc : \nINotify
+
+' 4. Сервіси -> Персональні Репозиторії (Прямі вертикальні лінії)
+auth -(0- user_repo : \nIUserRepo
+catalog -(0- cat_repo : \nIProductRepo,\nICharRepo, IReviewRepo
+order -(0- order_repo : \nIOrderRepo
+inventory -(0- stock_repo : \nIStockRepo
+
+' 5. Репозиторії -> БД
+user_repo -(0- db : \nSQL
+cat_repo -(0- db : \nSQL
+order_repo -(0- db : \nSQL
+stock_repo -(0- db : \nSQL
+
+' 6. Вихід на зовнішні сервіси
+auth -(0- oauth : \nOAuth API
+notify_svc -(0- notify_ext : \nEmail/SMS API
+payment -(0- pg : \nPayments API
+
+@enduml
