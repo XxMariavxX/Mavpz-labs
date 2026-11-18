@@ -1,0 +1,103 @@
+@startuml
+skinparam componentStyle uml2
+skinparam packageStyle rectangle
+skinparam linetype ortho
+skinparam defaultTextAlignment center
+skinparam shadowing false
+
+skinparam ranksep 125
+skinparam nodesep 95
+skinparam rectanglePadding 35
+
+title UML Component Diagram — My Little Pony Online
+
+actor "Користувач" as user
+
+' ==========================================
+' МЕЖА СИСТЕМИ (MAIN SYSTEM)
+' ==========================================
+rectangle "My Little Pony Online System" #LightYellow {
+
+    rectangle "Client Layer" #White {
+        [Web UI\n(React/Next.js)] as webui <<Client>>
+    }
+
+    rectangle "Gateway Layer" #White {
+        [API Gateway\n(Node.js / JWT Verify)] as api <<Gateway>>
+    }
+
+    rectangle "Business Services" #White {
+        [CatalogService] as catalog <<Service>>
+        [OrderService] as order <<Service>>
+        [AuthService] as auth <<Service>>
+
+        [InventoryService] as inventory <<Service>>
+        [PaymentService] as payment <<Service>>
+        [NotificationService] as notify_svc <<Service>>
+    }
+
+    rectangle "Data Access Layer" #White {
+        [Data Access\n(Repository Layer)] as data <<Repository>>
+    }
+}
+
+' ==========================================
+' ЗОВНІШНЯ ІНФРАСТРУКТУРА ТА СЕРВІСИ (ПОЗА МЕЖЕЮ)
+' ==========================================
+rectangle "External Services" #WhiteSmoke {
+    database "Database\n(PostgreSQL)" as db <<External Database>>
+    [Payment Gateway] as pg <<external>>
+    [Email/SMS Provider] as notify_ext <<external>>
+    [OAuth Provider] as oauth <<external>>
+}
+
+' ==========================================
+' ФІКСАЦІЯ СІТКИ (Нуль перетинів ліній)
+' ==========================================
+catalog -[hidden]right-> order
+order -[hidden]right-> auth
+
+inventory -[hidden]right-> payment
+payment -[hidden]right-> notify_svc
+
+catalog -[hidden]down-> inventory
+order -[hidden]down-> payment
+auth -[hidden]down-> notify_svc
+
+catalog -[hidden]down-> data
+
+db -[hidden]right-> pg
+pg -[hidden]right-> notify_ext
+notify_ext -[hidden]right-> oauth
+
+data -[hidden]down-> db
+payment -[hidden]down-> pg
+notify_svc -[hidden]down-> notify_ext
+
+' ==========================================
+' ЗВ'ЯЗКИ: КУЛЬКА + ПІВМІСЯЦЬ -(0-
+' ==========================================
+user -down-> webui
+webui -(0- api : HTTPS API (JWT)
+
+api -(0- catalog : ICatalog,\nICart, IReview\n\n
+api -(0- order : IOrder\n
+api -(0- auth : IAuth (JWT)\n\n
+
+order -(0- inventory : \n\nIInventory
+order -(0- payment : IPayment
+order -(0- notify_svc : INotify
+auth -(0- notify_svc : INotify
+
+catalog -(0- data : IProductRepo,\nICharRepo,\nIReviewRepo
+inventory -(0- data : IStockRepo
+order -(0- data : IOrderRepo
+auth -(0- data : IUserRepo
+
+data -(0- db : SQL
+
+payment -(0- pg : Payments API
+notify_svc -(0- notify_ext : Email/SMS API
+auth -(0- oauth : OAuth API
+
+@enduml
