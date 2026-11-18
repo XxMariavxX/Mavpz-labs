@@ -14,7 +14,7 @@ title UML Component Diagram — My Little Pony Online
 actor "Користувач" as user
 
 ' ==========================================
-' МЕЖА СИСТЕМИ (MAIN SYSTEM)
+' МЕЖА СИСТЕМИ
 ' ==========================================
 rectangle "My Little Pony Online System" #LightYellow {
 
@@ -52,7 +52,7 @@ rectangle "External Services" #WhiteSmoke {
 }
 
 ' ==========================================
-' ФІКСАЦІЯ СІТКИ (Нуль перетинів ліній)
+' ФІКСАЦІЯ СІТКИ
 ' ==========================================
 catalog -[hidden]right-> order
 order -[hidden]right-> auth
@@ -75,7 +75,7 @@ payment -[hidden]down-> pg
 notify_svc -[hidden]down-> notify_ext
 
 ' ==========================================
-' ЗВ'ЯЗКИ: КУЛЬКА + ПІВМІСЯЦЬ -(0-
+' ЗВ'ЯЗКИ
 ' ==========================================
 user -down-> webui
 webui -(0- api : HTTPS API (JWT)
