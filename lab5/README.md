@@ -1,6 +1,6 @@
 # UML Component Diagram — архітектура платформи «My Little Pony Online»
 
-Межа системи: усе всередині `My Little Pony Online` — наша платформа; `PaymentGateway`, `Email/SMS Provider`, `OAuth Provider` і `Database` — зовнішні інтеграції.
+Межа системи: усе всередині `My Little Pony Online` — платформа; `PaymentGateway`, `Email/SMS Provider`, `OAuth Provider` і `Database` — зовнішні інтеграції.
 
 ```mermaid
 flowchart LR
